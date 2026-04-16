@@ -961,7 +961,7 @@
                 let mentors = [];
                 try {
                     const token = await getIdToken(currentUser);
-                    const response = await fetch(`http://localhost:8080/api/student/mentors/${encodeURIComponent(userData.institutionName)}`, {
+                    const response = await fetch(`https://skillpulse-zjw1.onrender.com/api/student/mentors/${encodeURIComponent(userData.institutionName)}`, {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1622,7 +1622,7 @@
                     // Optional: Also try to update backend (but don't fail if it doesn't work)
                     try {
                         const token = await getIdToken(currentUser);
-                        const backendResponse = await fetch('http://localhost:8080/api/student/select-mentor', {
+                        const backendResponse = await fetch('https://skillpulse-zjw1.onrender.com/api/student/select-mentor', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1685,4 +1685,5 @@
 </body>
 
 </html>
+
 

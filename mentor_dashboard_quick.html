@@ -277,7 +277,7 @@
                 studentsListEl.innerHTML = '<p class="text-gray-500">Loading students from backend API...</p>';
 
                 const token = await getIdToken(currentUser);
-                const response = await fetch('http://localhost:8080/api/mentor/students', {
+                const response = await fetch('https://skillpulse-zjw1.onrender.com/api/mentor/students', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
