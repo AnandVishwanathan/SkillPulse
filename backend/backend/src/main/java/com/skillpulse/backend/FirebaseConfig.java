@@ -9,6 +9,8 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
+import java.io.FileInputStream;
 
 @Configuration
 public class FirebaseConfig {
@@ -17,14 +19,26 @@ public class FirebaseConfig {
     public FirebaseApp initializeFirebase() throws IOException {
         System.out.println("Initializing Firebase...");
         
-        ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
+        InputStream serviceAccount = null;
         
-        if (!resource.exists()) {
-            System.err.println("ERROR: firebase-service-account.json not found in resources folder");
-            throw new IOException("Firebase service account file not found");
+        // 1. Try to read from Render's Secret File path first
+        File secretFile = new File("/etc/secrets/firebase-service-account.json");
+        if (secretFile.exists()) {
+            System.out.println("Reading Firebase credentials from Render Secret File...");
+            serviceAccount = new FileInputStream(secretFile);
+        } else {
+            // 2. Fall back to local resource file
+            System.out.println("Reading Firebase credentials from classpath...");
+            ClassPathResource resource = new ClassPathResource("firebase-service-account.json");
+            if (resource.exists()) {
+                serviceAccount = resource.getInputStream();
+            }
         }
         
-        InputStream serviceAccount = resource.getInputStream();
+        if (serviceAccount == null) {
+            System.err.println("ERROR: firebase-service-account.json not found in resources folder or Secret Files");
+            throw new IOException("Firebase service account file not found");
+        }
 
         FirebaseOptions options = new FirebaseOptions.Builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
