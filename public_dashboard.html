@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Dashboard - Skillpulse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com/typography@0.5.x"></script>
+
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-darker.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+
+    <!-- Prism JS for Syntax Highlighting in courses -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-jsx.min.js"></script>
+
+    <style>
+        :root {
+            --sidebar-bg: #111827;
+            --main-bg: #f9fafb;
+            --card-bg: #ffffff;
+            --primary-accent: #8b5cf6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--main-bg);
+            color: #1f2937;
+        }
+
+        .sidebar-link {
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar-link.active,
+        .sidebar-link:hover {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .page-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #course-player-page.hidden {
+            display: none;
+        }
+
+        .module-item.active {
+            background-color: #ede9fe;
+            border-right: 4px solid var(--primary-accent);
+        }
+
+        .CodeMirror {
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            height: 100%;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+        }
+
+        #problem-solver-view .grid {
+            height: calc(100vh - 16rem);
+        }
+
+        .problem-item-row:hover {
+            background-color: #f3f4f6;
+        }
+
+        .toast-message {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            color: white;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .toast-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background-color: #22c55e;
+        }
+
+        .toast-error {
+            background-color: #ef4444;
+        }
+        
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+            animation: fadeIn 0.3s ease-in-out;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+            z-index: 50;
+        }
+        .modal-backdrop.active { display: flex; align-items: center; justify-content: center; }
+        .modal-backdrop.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <div id="loader" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100] p-8">
+        <div id="loader-spinner" class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-violet-500">
+        </div>
+        <p id="loader-message" class="mt-4 text-gray-600 text-center">Verifying Access & Loading Data...</p>
+    </div>
+
+    <div id="app-container" class="flex h-screen bg-gray-50 opacity-0 transition-opacity duration-500">
+        <aside id="sidebar" class="w-64 flex-shrink-0 bg-gray-900 text-gray-300 flex flex-col">
+            <div class="h-20 flex items-center justify-center px-6"> <a href="#" data-page="dashboard"
+                    class="sidebar-link flex items-center space-x-3"> <img class="h-8 w-8 text-violet-500"
+                        src="Gemini_Generated_Image_b5y39db5y39db5y3 (1).ico" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5z" /></img> <span
+                        class="text-2xl font-bold text-white">Skillpulse</span>
+                </a> </div>
+            <nav id="sidebar-nav" class="flex-1 px-4 py-4 space-y-2">
+                <a href="#" data-page="dashboard" class="sidebar-link active flex items-center px-4 py-3 rounded-lg"><i
+                        data-lucide="layout-dashboard" class="h-5 w-5 mr-3"></i><span>Dashboard</span></a>
+                <a href="#" data-page="courses" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i
+                        data-lucide="book-open" class="h-5 w-5 mr-3"></i><span>My Courses</span></a>
+                <a href="#" data-page="certificates" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i
+                        data-lucide="award" class="h-5 w-5 mr-3"></i><span>Certificates</span></a>
+                <a href="#" data-page="playground" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i
+                        data-lucide="code-2" class="h-5 w-5 mr-3"></i><span>Playground</span></a>
+                <a href="#" data-page="settings" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i
+                        data-lucide="settings" class="h-5 w-5 mr-3"></i><span>Settings</span></a>
+            </nav>
+            <div class="p-4 border-t border-gray-800">
+                <a href="#" data-page="settings" class="block p-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center"> <img id="user-avatar" class="h-10 w-10 rounded-full object-cover"
+                            src="https://placehold.co/100x100/A78BFA/FFFFFF?text=P" alt="User Avatar">
+                        <div class="ml-3">
+                            <p id="user-name" class="font-semibold text-white">Loading...</p>
+                            <p id="user-level" class="text-sm text-gray-400">Level...</p>
+                        </div>
+                    </div>
+                </a> <button id="logout-button"
+                    class="mt-4 w-full flex items-center justify-center text-sm py-2 px-4 bg-gray-700 hover:bg-gray-600 rounded-lg"><i
+                        data-lucide="log-out" class="h-4 w-4 mr-2"></i>Logout</button> </div>
+        </aside>
+
+        <main id="main-content" class="flex-1 overflow-y-auto">
+            <div id="page-wrapper" class="p-10">
+                <div id="dashboard-page" class="page-content active">
+                    <header class="mb-10">
+                        <h1 id="welcome-header" class="text-4xl font-extrabold text-gray-800">Welcome back!</h1>
+                        <p class="text-gray-500 mt-2">Let's continue your learning journey.</p>
+                    </header>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-8">
+                            <div id="continue-learning-card" class="card p-8"></div>
+                        </div>
+                        <div class="space-y-8">
+                            <div class="card p-6">
+                                <h3 class="text-xl font-bold mb-4">Progress Overview</h3>
+                                <div class="relative w-full h-64 flex items-center justify-center">
+                                    <canvas id="progressChart"></canvas>
+                                    <div id="chart-center-text"
+                                        class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+                                        <span id="chart-center-value"
+                                            class="text-3xl font-bold text-gray-800 transition-all duration-200"></span>
+                                        <span id="chart-center-label"
+                                            class="text-sm text-gray-500 transition-all duration-200"></span>
+                                    </div>
+                                </div>
+                                <div id="chart-legend" class="mt-4 flex justify-center space-x-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="courses-page" class="page-content">
+                    <header class="mb-8">
+                        <h1 class="text-4xl font-extrabold">My Courses</h1>
+                    </header>
+                    <div id="course-list-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+                <div id="certificates-page" class="page-content">
+                    <header class="mb-8 flex items-center justify-between">
+                        <h1 class="text-4xl font-extrabold">My Certificates</h1>
+                        <button id="add-certificate-button"
+                            class="bg-violet-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-violet-700 transition-colors">Add
+                            New Certificate</button>
+                    </header>
+                    <div id="certificates-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+
+                <div id="playground-page" class="page-content">
+                    <div id="problem-list-view">
+                        <header class="mb-8">
+                            <h1 class="text-4xl font-extrabold">Coding Playground</h1>
+                            <p class="text-gray-500 mt-2">Select a problem to start solving.</p>
+                        </header>
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                            <div class="grid grid-cols-5 p-4 bg-gray-50 border-b font-semibold text-sm text-gray-600">
+                                <div class="col-span-3">Title</div>
+                                <div class="col-span-2">Difficulty</div>
+                            </div>
+                            <div id="problem-list-container"></div>
+                        </div>
+                    </div>
+
+                    <div id="problem-solver-view" class="hidden">
+                        <header class="mb-8 flex justify-between items-center">
+                            <div>
+                                <button id="back-to-problems-btn"
+                                    class="text-sm font-semibold text-gray-600 hover:text-black flex items-center mb-4"><i
+                                        data-lucide="arrow-left" class="h-4 w-4 mr-2"></i> Back to Problems</button>
+                                <h1 id="problem-title-header" class="text-4xl font-extrabold"></h1>
+                            </div>
+                            <div>
+                                <label for="language-select" class="sr-only">Select Language</label>
+                                <select id="language-select"
+                                    class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5">
+                                    <option value="93">JavaScript (Node.js 18.15.0)</option>
+                                    <option value="71">Python (3.8.1)</option>
+                                    <option value="62">Java (OpenJDK 13.0.1)</option>
+                                    <option value="50">C (GCC 9.2.0)</option>
+                                    <option value="54">C++ (GCC 9.2.0)</option>
+                                </select>
+                            </div>
+                        </header>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-xl shadow-sm p-6 overflow-y-auto">
+                                <div id="problem-description-container"></div>
+                            </div>
+                            <div class="flex flex-col">
+                                <div class="flex-grow bg-white rounded-xl shadow-sm">
+                                    <textarea id="code-editor"></textarea>
+                                </div>
+                                <div class="flex items-center justify-end mt-4">
+                                    <button id="run-solution-btn"
+                                        class="bg-green-500 text-white font-bold px-6 py-2 rounded-xl hover:bg-green-600 transition-colors flex items-center"><i
+                                            data-lucide="play" class="h-5 w-5 mr-2"></i>Run Solution</button>
+                                </div>
+                                <div id="solution-output-container"
+                                    class="mt-4 bg-gray-800 text-white rounded-xl p-4 font-mono text-sm h-48 overflow-y-auto">
+                                    Click "Run Solution" to test your code.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW SETTINGS PAGE -->
+                <div id="settings-page" class="page-content">
+                    <header class="mb-10">
+                        <h1 class="text-4xl font-extrabold text-gray-800">Account Settings</h1>
+                        <p class="text-gray-500 mt-2">Manage your profile and account information.</p>
+                    </header>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-8">
+                            <div class="card p-8">
+                                <h3 class="text-xl font-bold mb-6">Profile Information</h3>
+                                <form id="update-profile-form" class="space-y-4">
+                                    <div>
+                                        <label for="settings-fullName" class="block text-sm font-medium text-gray-700">Full
+                                            Name</label>
+                                        <input type="text" name="fullName" id="settings-fullName"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm p-3 border"
+                                            required>
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button type="submit"
+                                            class="bg-violet-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-violet-700 transition-colors">Save
+                                            Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="card p-8">
+                                <h3 class="text-xl font-bold mb-6">Security</h3>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium">Password</p>
+                                        <p class="text-sm text-gray-500">For security, we will send a reset link to your
+                                            email.</p>
+                                    </div>
+                                    <button id="reset-password-button"
+                                        class="bg-gray-200 text-gray-700 font-bold px-6 py-3 rounded-xl hover:bg-gray-300 transition-colors">Send
+                                        Reset Link</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-8">
+                            <div class="card p-8">
+                                <h3 class="text-xl font-bold mb-6">Account Details</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500">Email Address</p>
+                                        <p id="settings-email" class="font-semibold text-gray-800"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500">Role</p>
+                                        <p id="settings-role" class="font-semibold text-gray-800 capitalize"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="course-player-page" class="hidden w-full h-full relative"></div>
+        </main>
+    </div>
+
+     <!-- Performance Modal -->
+    <div id="performance-modal" class="modal-backdrop">
+        <div class="modal-content bg-white rounded-xl shadow-2xl p-8 w-full max-w-4xl">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 id="performance-modal-title" class="text-2xl font-bold text-gray-800">Course Performance</h2>
+                    <p id="performance-modal-course-name" class="text-violet-600 font-semibold mt-1"></p>
+                </div>
+                <button id="performance-modal-close-btn" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="h-6 w-6"></i></button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="card bg-gray-50 p-6 text-center">
+                        <p class="text-sm text-gray-500">Overall Course Completion</p>
+                        <p id="performance-modal-overall-progress" class="text-6xl font-extrabold text-violet-600 my-2">0%</p>
+                    </div>
+                     <div class="card bg-gray-50 p-6 text-center">
+                        <p class="text-sm text-gray-500">Final Test Score</p>
+                        <p id="performance-modal-final-score" class="text-6xl font-extrabold text-violet-600 my-2">N/A</p>
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                     <h3 class="font-semibold mb-2 text-gray-700">Module Completion Status</h3>
+                     <div id="performance-modal-module-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+             <div class="mt-8">
+                <h3 class="font-semibold mb-2 text-gray-700">Completion Progress</h3>
+                <canvas id="module-completion-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="toast-container"></div>
+    <div id="add-certificate-modal"
+        class="hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-lg w-full">
+            <h3 class="text-2xl font-bold mb-6">Add New Certificate</h3>
+            <form id="add-certificate-form" class="space-y-4">
+                <div> <label for="certificate-name" class="block text-sm font-medium text-gray-700 mb-1">Certificate
+                        Name</label> <input type="text" id="certificate-name" name="certificateName" required
+                        class="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-violet-500 focus:ring-violet-500">
+                </div>
+                <div> <label for="certificate-issuer"
+                        class="block text-sm font-medium text-gray-700 mb-1">Issuer</label> <input type="text"
+                        id="certificate-issuer" name="certificateIssuer" required
+                        class="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-violet-500 focus:ring-violet-500">
+                </div>
+                <div> <label for="certificate-date" class="block text-sm font-medium text-gray-700 mb-1">Date
+                        Earned</label> <input type="date" id="certificate-date" name="certificateDate" required
+                        class="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-violet-500 focus:ring-violet-500">
+                </div>
+                <div> <label for="certificate-url" class="block text-sm font-medium text-gray-700 mb-1">Certificate
+                        URL</label> <input type="url" id="certificate-url" name="certificateUrl"
+                        placeholder="https://example.com/certificate.pdf"
+                        class="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-violet-500 focus:ring-violet-500">
+                </div>
+                <div class="flex justify-end space-x-4 pt-4"> <button type="button" id="cancel-certificate-button"
+                        class="px-6 py-3 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+                    <button type="submit"
+                        class="px-6 py-3 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 transition-colors">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="quiz-modal"
+        class="hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div id="quiz-modal-content" class="bg-white rounded-2xl p-8 max-w-2xl w-full flex flex-col"></div>
+    </div>
+    <div id="ai-chat-modal"
+        class="hidden fixed bottom-24 right-8 w-full max-w-md bg-white rounded-2xl shadow-2xl z-50 flex flex-col max-h-[80vh]">
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <div class="flex items-center space-x-3"> <i data-lucide="bot" class="h-6 w-6 text-violet-600"></i>
+                <h3 class="text-lg font-bold">AI Learning Assistant</h3>
+            </div> <button id="close-chat-button" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <div id="chat-history" class="p-4 flex-1 overflow-y-auto space-y-4">
+            <div class="flex items-start space-x-3">
+                <div class="bg-gray-200 p-2 rounded-full flex-shrink-0"><i data-lucide="bot" class="h-5 w-5"></i></div>
+                <div class="bg-gray-200 p-3 rounded-lg rounded-tl-none">
+                    <p class="text-sm">Hello! Ask me any questions about the current module.</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t">
+            <form id="chat-form" class="relative"> <input id="chat-input" type="text" placeholder="Ask a question..."
+                    class="w-full pl-4 pr-12 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    autocomplete="off"> <button type="submit"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 bg-violet-600 text-white h-10 w-10 rounded-full flex items-center justify-center hover:bg-violet-700 transition-colors"><i
+                        data-lucide="send" class="h-5 w-5"></i></button> </form>
+        </div>
+    </div>
+    <div id="certificate-modal"
+        class="hidden fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, addDoc, onSnapshot, updateDoc, arrayUnion, query, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDofE9-vx5XzqPAT7qUdK_ub0L-283kN4M",
+            authDomain: "skillpulse-d121f.firebaseapp.com",
+            projectId: "skillpulse-d121f",
+            storageBucket: "skillpulse-d121f.firebasestorage.app",
+            messagingSenderId: "350596146985",
+            appId: "1:350596146985:web:8b32779f769623adb4b938"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let progressChart, userData, coursesData = {}, problemsData = {}, currentProblem = null, currentUser, codeEditor;
+        let moduleCompletionChart = null;
+        let currentCourseContext = { courseId: null, moduleId: null };
+        const PASSING_SCORE = 80;
+
+        function showFatalError(message) {
+            const loader = document.getElementById('loader');
+            loader.innerHTML = `<div class="text-center"><i data-lucide="alert-triangle" class="h-16 w-16 text-red-500 mx-auto mb-4"></i><h2 class="text-2xl font-bold text-gray-800">Access Error</h2><p class="text-gray-600 mt-2 mb-6">${message}</p><a href="login.html" class="bg-violet-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-violet-700 transition-colors">Back to Login Page</a></div>`;
+            lucide.createIcons();
+        }
+
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-message ${isError ? 'toast-error' : 'toast-success'}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        let initialLoadComplete = false;
+        let userDocUnsubscribe = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                if (userDocUnsubscribe) userDocUnsubscribe();
+
+                const userDocRef = doc(db, "users", user.uid);
+                userDocUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.role !== 'public') {
+                            showFatalError(`This dashboard is for public users, but you are logged in as a <strong>${data.role}</strong>.`);
+                            return;
+                        }
+
+                        userData = data;
+
+                        if (!initialLoadComplete) {
+                            loadDashboardData().then(() => {
+                                initializeDashboard();
+                                initialLoadComplete = true;
+                            });
+                        } else {
+                            renderSidebar();
+                            const activePageId = document.querySelector('.page-content.active')?.id;
+                            if (activePageId) {
+                                const pageName = activePageId.replace('-page', '');
+                                switchPage(pageName, true);
+                            }
+                        }
+                    } else {
+                        showFatalError('Your user profile could not be found in the database.');
+                    }
+                }, (error) => {
+                    console.error("Error listening to user document:", error);
+                    showFatalError('A critical error occurred while listening for your data.');
+                });
+
+            } else {
+                if (userDocUnsubscribe) userDocUnsubscribe();
+                initialLoadComplete = false;
+                window.location.href = 'login.html';
+            }
+        });
+
+
+        async function loadDashboardData() {
+            try {
+                const coursesSnapshot = await getDocs(collection(db, "courses"));
+                coursesSnapshot.forEach(doc => { coursesData[doc.id] = doc.data(); });
+            } catch (e) { console.error("Could not load dashboard data.", e); }
+        }
+
+        async function loadPlaygroundData() {
+            if (Object.keys(problemsData).length > 0) return;
+            const container = document.getElementById('problem-list-container');
+            container.innerHTML = '<p class="p-4 text-center text-gray-500">Loading problems...</p>';
+
+            try {
+                const problemsSnapshot = await getDocs(collection(db, "problems"));
+                problemsSnapshot.forEach(doc => { problemsData[doc.id] = { id: doc.id, ...doc.data() }; });
+            } catch (e) {
+                console.error("Could not load playground data.", e);
+                container.innerHTML = '<p class="p-4 text-center text-red-500">Failed to load problems. Please try again.</p>';
+            }
+        }
+
+        function initializeDashboard() {
+            renderSidebar();
+            renderDashboardPage();
+            setupEventListeners();
+            initializePlayground();
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('app-container').classList.remove('opacity-0');
+            lucide.createIcons();
+        }
+
+        function renderSidebar() {
+            document.getElementById('user-name').textContent = userData.fullName || 'User';
+            document.getElementById('user-level').textContent = `Level ${userData.level || 1}`;
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.fullName || 'P')}&background=8b5cf6&color=fff`;
+        }
+
+        function renderDashboardPage() {
+            document.getElementById('welcome-header').textContent = `Welcome back, ${userData.fullName?.split(' ')[0] || 'User'}!`;
+            const lastCourseId = userData.lastAccessedCourse;
+            const continueCard = document.getElementById('continue-learning-card');
+            if (lastCourseId && coursesData[lastCourseId]) {
+                const course = coursesData[lastCourseId];
+                const progress = userData.courseData?.[lastCourseId]?.progress || 0;
+                continueCard.innerHTML = `<p class="font-bold text-violet-700">CONTINUE LEARNING</p><h2 class="text-3xl font-bold mt-2 mb-4">${course.title}</h2><div class="bg-gray-200 h-2.5 rounded-full mb-2"><div class="bg-violet-500 h-full rounded-full" style="width: ${progress}%;"></div></div><p class="text-sm text-gray-500">${progress}% Complete</p><button data-course-id="${lastCourseId}" class="mt-6 bg-violet-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-violet-700 transition resume-button">Resume Learning</button>`;
+            } else {
+                continueCard.innerHTML = `<h2 class="text-3xl font-bold">Start Your Journey</h2><p class="text-gray-500 mt-2 mb-6">Explore our courses and begin learning a new skill today.</p><button data-page="courses" class="bg-violet-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-violet-700 transition explore-courses-button">Explore Courses</button>`;
+            }
+            updateChart();
+        }
+
+        function updateChart() {
+            if (!userData.courseData) userData.courseData = {};
+            const enrolledCourseIds = Object.keys(userData.courseData);
+            const completed = enrolledCourseIds.filter(id => userData.courseData[id].progress >= 100).length;
+            const inProgress = enrolledCourseIds.filter(id => userData.courseData[id].progress > 0 && userData.courseData[id].progress < 100).length;
+            const notStarted = enrolledCourseIds.length - completed - inProgress;
+
+            const chartData = {
+                labels: ['Completed', 'In Progress', 'Not Started'],
+                values: [completed, inProgress, notStarted]
+            };
+            const centerValueEl = document.getElementById('chart-center-value');
+            const centerLabelEl = document.getElementById('chart-center-label');
+            centerValueEl.textContent = enrolledCourseIds.length;
+            centerLabelEl.textContent = 'Enrolled Courses';
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const completedGradient = ctx.createLinearGradient(0, 0, 0, 256);
+            completedGradient.addColorStop(0, '#a78bfa');
+            completedGradient.addColorStop(1, '#8b5cf6');
+            const inProgressGradient = ctx.createLinearGradient(0, 0, 0, 256);
+            inProgressGradient.addColorStop(0, '#60a5fa');
+            inProgressGradient.addColorStop(1, '#3b82f6');
+            if (progressChart) {
+                progressChart.data.datasets[0].data = chartData.values;
+                progressChart.update();
+            } else {
+                progressChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{ data: chartData.values, backgroundColor: [completedGradient, inProgressGradient, '#e5e7eb'], borderColor: 'var(--card-bg)', borderWidth: 6, hoverBorderColor: '#e5e7eb', hoverBorderWidth: 6, hoverOffset: 10 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '80%',
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                            if (chartElement.length > 0) {
+                                centerValueEl.textContent = chartData.values[chartElement[0].index];
+                                centerLabelEl.textContent = chartData.labels[chartElement[0].index];
+                            } else {
+                                centerValueEl.textContent = enrolledCourseIds.length;
+                                centerLabelEl.textContent = 'Enrolled Courses';
+                            }
+                        },
+                    }
+                });
+            }
+            generateLegend(chartData);
+        }
+
+        function generateLegend(chartData) {
+            const legendContainer = document.getElementById('chart-legend');
+            legendContainer.innerHTML = '';
+            const colors = ['bg-violet-500', 'bg-blue-500', 'bg-gray-300'];
+            chartData.labels.forEach((label, index) => {
+                if (chartData.values[index] > 0) {
+                    legendContainer.innerHTML += `<div class="flex items-center text-sm text-gray-600"><span class="h-3 w-3 rounded-full ${colors[index]} mr-2"></span><span>${label}</span></div>`;
+                }
+            });
+        }
+
+        function renderCoursesPage() {
+            const container = document.getElementById('course-list-view');
+            container.innerHTML = '';
+            Object.keys(coursesData).forEach(courseId => {
+                const course = coursesData[courseId];
+                const isEnrolled = userData.courseData && userData.courseData[courseId];
+                const progress = isEnrolled ? userData.courseData[courseId].progress || 0 : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'card p-6 flex flex-col';
+                
+                let buttonsHtml = '';
+                if (isEnrolled) {
+                    buttonsHtml = `
+                        <div class="bg-gray-200 h-2.5 rounded-full mt-auto"><div class="bg-violet-500 h-full rounded-full" style="width: ${progress}%;"></div></div>
+                        <p class="text-xs text-gray-500 mt-2 mb-4">${progress}% Complete</p>
+                        <div class="flex space-x-2">
+                            <button data-course-id="${courseId}" class="w-full bg-violet-600 text-white font-bold py-2 px-4 rounded-xl hover:bg-violet-700 transition course-action-btn">${progress > 0 ? 'Continue' : 'Start Course'}</button>
+                            <button data-course-id="${courseId}" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-xl hover:bg-gray-300 transition view-performance-btn">Performance</button>
+                        </div>
+                    `;
+                } else {
+                     buttonsHtml = `<button data-course-id="${courseId}" class="mt-auto bg-green-500 text-white font-bold py-2 px-4 rounded-xl hover:bg-green-600 transition enroll-btn">Enroll</button>`;
+                }
+                
+                card.innerHTML = `
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-xl bg-violet-500">${course.icon.slice(-2).toUpperCase()}</div>
+                        <div>
+                            <h3 class="text-xl font-bold">${course.title}</h3>
+                            <p class="text-sm text-gray-500">${course.modules.length} modules</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-4 text-sm flex-grow">${course.description}</p>
+                    ${buttonsHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        async function enrollInCourse(courseId) {
+            const userDocRef = doc(db, "users", currentUser.uid);
+            try {
+                await updateDoc(userDocRef, {
+                    [`courseData.${courseId}`]: {
+                        progress: 0,
+                        score: null,
+                        completedModules: [],
+                    }
+                });
+                showToast("Successfully enrolled!", false);
+            } catch(e) {
+                showToast("Error enrolling in course.", true);
+                console.error(e);
+            }
+        }
+        
+        function openPerformanceModal(courseId) {
+             const course = coursesData[courseId];
+             const courseData = userData.courseData[courseId];
+             if (!course || !courseData) return;
+
+             document.getElementById('performance-modal-course-name').textContent = course.title;
+             document.getElementById('performance-modal-overall-progress').textContent = `${courseData.progress || 0}%`;
+             document.getElementById('performance-modal-final-score').textContent = courseData.score ? `${courseData.score}%` : 'N/A';
+             
+             const moduleListContainer = document.getElementById('performance-modal-module-list');
+             moduleListContainer.innerHTML = course.modules.map(module => {
+                const isCompleted = courseData.completedModules?.includes(module.id);
+                return `
+                    <div class="flex items-center p-2 rounded-md ${isCompleted ? 'bg-green-50' : 'bg-gray-50'}">
+                        <i data-lucide="${isCompleted ? 'check-circle' : 'circle'}" class="h-5 w-5 mr-3 ${isCompleted ? 'text-green-500' : 'text-gray-400'}"></i>
+                        <span class="text-sm ${isCompleted ? 'text-gray-800' : 'text-gray-500'}">${module.title}</span>
+                    </div>
+                `;
+             }).join('');
+             lucide.createIcons();
+             
+             const completedCount = courseData.completedModules?.length || 0;
+             const totalModules = course.modules.length;
+             
+             const chartCanvas = document.getElementById('module-completion-chart');
+             if(moduleCompletionChart) moduleCompletionChart.destroy();
+             
+             moduleCompletionChart = new Chart(chartCanvas, {
+                 type: 'bar',
+                 data: {
+                     labels: ['Modules'],
+                     datasets: [
+                        {
+                            label: 'Completed',
+                            data: [completedCount],
+                            backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                            borderColor: 'rgba(139, 92, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Remaining',
+                            data: [totalModules - completedCount],
+                            backgroundColor: 'rgba(229, 231, 235, 0.7)',
+                            borderColor: 'rgba(209, 213, 219, 1)',
+                             borderWidth: 1
+                        }
+                     ]
+                 },
+                 options: {
+                     indexAxis: 'y',
+                     scales: {
+                         x: { stacked: true, max: totalModules, display: false },
+                         y: { stacked: true, display: false }
+                     },
+                     plugins: {
+                         legend: {
+                             position: 'bottom',
+                         },
+                         tooltip: {
+                             callbacks: {
+                                 label: function(context) {
+                                     return `${context.dataset.label}: ${context.raw}`;
+                                 }
+                             }
+                         }
+                     }
+                 }
+             });
+
+             document.getElementById('performance-modal').classList.add('active');
+        }
+
+        async function showCoursePlayer(courseId) {
+            if (!courseId || !coursesData[courseId]) { console.error("Invalid courseId:", courseId); return; }
+            const course = coursesData[courseId];
+            if (!course.modules || course.modules.length === 0) { alert("Sorry, the content for this course is not available yet."); return; }
+            document.getElementById('page-wrapper').classList.add('hidden');
+            document.getElementById('sidebar').classList.add('hidden');
+            const player = document.getElementById('course-player-page');
+            player.innerHTML = '';
+            player.classList.remove('hidden');
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { lastAccessedCourse: courseId });
+            } catch (error) { console.warn("Could not update last accessed course", error); }
+            renderCoursePlayer(courseId, course.modules[0].id);
+        }
+
+        function renderCoursePlayer(courseId, activeModuleId) {
+            currentCourseContext = { courseId, moduleId: activeModuleId };
+            const course = coursesData[courseId];
+            const userCourseData = userData.courseData?.[courseId] || { completedModules: [] };
+            const activeModule = course.modules.find(m => m.id === activeModuleId);
+            if (!activeModule) { console.error("Could not find module:", activeModuleId); return; }
+            const player = document.getElementById('course-player-page');
+            const syllabusHtml = course.modules.map(module => `<div class="module-item p-4 cursor-pointer hover:bg-gray-100 ${module.id === activeModuleId ? 'active' : ''}" data-course-id="${courseId}" data-module-id="${module.id}"><div class="flex items-center space-x-3"><i data-lucide="${userCourseData.completedModules.includes(module.id) ? 'check-circle' : 'circle'}" class="h-5 w-5 ${userCourseData.completedModules.includes(module.id) ? 'text-green-500' : 'text-gray-400'}"></i><span class="font-medium text-sm">${module.title}</span></div></div>`).join('');
+            const isLastModule = course.modules.findIndex(m => m.id === activeModuleId) === course.modules.length - 1;
+            const currentIndex = course.modules.findIndex(m => m.id === activeModuleId);
+            player.innerHTML = `
+                <div class="flex h-screen">
+                    <div class="w-80 bg-white border-r flex-shrink-0 flex flex-col h-full">
+                        <div class="p-4 border-b">
+                            <button class="text-sm font-semibold text-gray-600 hover:text-black flex items-center back-to-dashboard-btn"><i data-lucide="arrow-left" class="h-4 w-4 mr-2"></i> Back to Courses</button>
+                            <h3 class="text-lg font-bold mt-4">${course.title}</h3>
+                        </div>
+                        <div id="syllabus-container" class="overflow-y-auto flex-1">${syllabusHtml}</div>
+                    </div>
+                    <div class="flex-1 p-12 overflow-y-auto">
+                        <h1 class="text-4xl font-extrabold mb-8">${activeModule.title}</h1>
+                        <div class="prose max-w-none prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg">${activeModule.longContent}</div>
+                        <div class="mt-12 flex justify-between items-center">
+                            <button class="bg-gray-200 text-gray-700 font-bold px-6 py-3 rounded-xl prev-module-btn" data-course-id="${courseId}" data-current-index="${currentIndex}" ${currentIndex === 0 ? 'disabled' : ''}>Previous</button>
+                            <button data-module-id="${activeModule.id}" data-course-id="${courseId}" class="bg-violet-600 text-white font-bold px-6 py-3 rounded-xl complete-module-btn">${isLastModule ? 'Finish Course & Take Quiz' : 'Mark as Complete & Next'}</button>
+                        </div>
+                    </div>
+                </div>
+                <button id="ai-chat-fab" class="fixed bottom-8 right-8 bg-violet-600 text-white h-16 w-16 rounded-full shadow-2xl flex items-center justify-center transform hover:scale-110 transition-transform"><i data-lucide="bot" class="h-8 w-8"></i></button>
+            `;
+            lucide.createIcons();
+            try {
+                Prism.highlightAllUnder(player);
+            } catch (e) {
+                console.warn("PrismJS highlighting error:", e);
+            }
+        }
+
+        async function handleModuleCompletion(courseId, moduleId) {
+            const userDocRef = doc(db, "users", currentUser.uid);
+            if (!userData.courseData?.[courseId]?.completedModules.includes(moduleId)) {
+                await updateDoc(userDocRef, { [`courseData.${courseId}.completedModules`]: arrayUnion(moduleId) });
+            }
+            const totalModules = coursesData[courseId].modules.length;
+            const completedCount = userData.courseData[courseId].completedModules.length;
+            const newProgress = Math.round((completedCount / totalModules) * 100);
+            await updateDoc(userDocRef, { [`courseData.${courseId}.progress`]: newProgress });
+
+            const currentIndex = coursesData[courseId].modules.findIndex(m => m.id === moduleId);
+            const nextModule = coursesData[courseId].modules[currentIndex + 1];
+            if (nextModule) {
+                renderCoursePlayer(courseId, nextModule.id);
+            } else {
+                generateAndShowQuiz(courseId);
+            }
+        }
+
+        async function generateAndShowQuiz(courseId) {
+            const modal = document.getElementById('quiz-modal');
+            const content = document.getElementById('quiz-modal-content');
+            modal.classList.remove('hidden');
+            content.innerHTML = `<div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500 mx-auto"></div><p class="mt-4">Generating your personalized quiz...</p></div>`;
+
+            try {
+                const apiKey = "AIzaSyBnJf1nuqk2RWo5w-FsSQhKDy9Q3nVBJg0";
+
+                if (apiKey === "YOUR_GOOGLE_AI_API_KEY_HERE") {
+                    throw new Error("API Key is missing. Please add your Google AI API key to the script.");
+                }
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const courseContent = coursesData[courseId].modules.map(m => m.title + ": " + m.longContent).join("\n\n");
+                const prompt = `Based on the following course content about ${coursesData[courseId].title}, generate a 5-question multiple choice quiz. The response MUST be a valid JSON object with a single key "questions" which is an array of objects. Each object must have three keys: "questionText" (a string), "options" (an array of exactly 4 strings), and "correctAnswer" (the exact string from the options array that is correct). Content: ${courseContent}`;
+                const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } };
+
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`API Error: ${response.statusText}. Details: ${errorBody}`);
+                }
+
+                const result = await response.json();
+                
+                if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    throw new Error("Invalid response format from API. No content received.");
+                }
+
+                const quizJson = JSON.parse(result.candidates[0].content.parts[0].text);
+                renderQuiz(quizJson.questions, courseId);
+            } catch (error) {
+                console.error("Quiz Generation Error:", error);
+                let errorMessage = "Sorry, there was an error generating the quiz. Please try again later.";
+                if (error.message.includes("API Key is missing")) {
+                    errorMessage = "Quiz generation failed: The Google AI API key is missing. Please add your key.";
+                } else if (error.message.includes("API Error")) {
+                    errorMessage = "There was a problem connecting to the quiz generation service. Please check the console.";
+                }
+                
+                content.innerHTML = `<div class="text-center"><i data-lucide="alert-circle" class="h-12 w-12 text-red-500 mx-auto mb-4"></i><p class="text-red-600 font-semibold">${errorMessage}</p><button onclick="document.getElementById('quiz-modal').classList.add('hidden')" class="mt-6 bg-gray-200 px-6 py-2 rounded-lg">Close</button></div>`;
+                lucide.createIcons();
+            }
+        }
+
+        function renderQuiz(questions, courseId) {
+            const content = document.getElementById('quiz-modal-content');
+
+            const validQuestions = questions ? questions.filter(q => q && q.questionText && Array.isArray(q.options) && q.options.length > 0) : [];
+            
+            if (validQuestions.length === 0) {
+                 content.innerHTML = `<div class="text-center"><i data-lucide="alert-circle" class="h-12 w-12 text-red-500 mx-auto mb-4"></i><p class="text-red-600 font-semibold">The generated quiz was empty or invalid. Please try again.</p><button onclick="document.getElementById('quiz-modal').classList.add('hidden')" class="mt-6 bg-gray-200 px-6 py-2 rounded-lg">Close</button></div>`;
+                 lucide.createIcons();
+                 return;
+            }
+
+            let questionsHtml = validQuestions.map((q, i) => {
+                const optionsHtml = q.options.map(opt => {
+                     if (typeof opt !== 'string' || opt.trim() === '') return '';
+                    return `<label class="block p-3 my-1 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"><input type="radio" name="q${i}" value="${opt}" class="mr-2 text-violet-600 focus:ring-violet-500"><span>${opt}</span></label>`
+                }).join('');
+                return `<div class="mb-6"><p class="font-semibold mb-3">${i + 1}. ${q.questionText}</p>${optionsHtml}</div>`;
+            }).join('');
+            
+            content.innerHTML = `
+                <h2 class="text-3xl font-bold mb-4 border-b pb-4">Course Quiz: ${coursesData[courseId].title}</h2>
+                <form id="quiz-form">
+                    <div class="max-h-[60vh] overflow-y-auto p-1 pr-4">
+                        ${questionsHtml}
+                    </div>
+                    <button type="submit" class="w-full bg-violet-600 text-white font-bold py-3 rounded-xl mt-6">Submit Answers</button>
+                </form>
+            `;
+            document.getElementById('quiz-form').onsubmit = (e) => handleQuizSubmission(e, validQuestions, courseId);
+        }
+
+        async function handleQuizSubmission(e, questions, courseId) {
+            e.preventDefault();
+            const form = e.target;
+            let score = 0;
+            const results = questions.map((q, i) => {
+                const selected = form.querySelector(`input[name="q${i}"]:checked`);
+                const isCorrect = selected && selected.value === q.correctAnswer;
+                if (isCorrect) score++;
+                return { question: q.questionText, selected: selected?.value, correct: q.correctAnswer, isCorrect };
+            });
+            const percentage = Math.round((score / questions.length) * 100);
+
+            const userDocRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userDocRef, { [`courseData.${courseId}.score`]: percentage });
+
+            if (percentage >= PASSING_SCORE) {
+                await generateAndSaveCertificate(courseId);
+            }
+            
+            renderQuizResults(percentage, results, courseId);
+        }
+
+        function renderQuizResults(percentage, results, courseId) {
+            const content = document.getElementById('quiz-modal-content');
+            let resultsHtml = results.map(r => `
+                <div class="p-3 rounded-lg ${r.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border mb-3">
+                    <p class="font-semibold">${r.question}</p>
+                    <p class="text-sm ${r.isCorrect ? 'text-green-700' : 'text-red-700'}">Your answer: ${r.selected || 'Not answered'}</p>
+                    ${!r.isCorrect ? `<p class="text-sm text-blue-700">Correct answer: ${r.correct}</p>` : ''}
+                </div>
+            `).join('');
+            
+            let resultMessage = '';
+            if (percentage >= PASSING_SCORE) {
+                resultMessage = `<div class="p-4 text-center bg-green-100 text-green-800 rounded-lg mb-4">
+                    <h3 class="font-bold text-lg">Congratulations, you passed!</h3>
+                    <p class="text-sm">Your certificate has been added to your profile.</p>
+                </div>`;
+            } else {
+                 resultMessage = `<div class="p-4 text-center bg-yellow-100 text-yellow-800 rounded-lg mb-4">
+                    <h3 class="font-bold text-lg">Almost there!</h3>
+                    <p class="text-sm">You need a score of ${PASSING_SCORE}% to pass. Keep studying and try again!</p>
+                </div>`;
+            }
+
+            content.innerHTML = `
+                <h2 class="text-3xl font-bold mb-2">Quiz Results</h2>
+                <p class="text-xl font-semibold mb-6">You scored: ${percentage}%</p>
+                ${resultMessage}
+                <div class="max-h-64 overflow-y-auto pr-2">${resultsHtml}</div>
+                <button id="close-quiz-btn" class="w-full bg-violet-600 text-white font-bold py-3 rounded-xl mt-6">Close</button>
+            `;
+            document.getElementById('close-quiz-btn').onclick = () => {
+                document.getElementById('quiz-modal').classList.add('hidden');
+                document.querySelector('.back-to-dashboard-btn')?.click();
+            };
+        }
+
+        async function generateAndSaveCertificate(courseId) {
+            const certsRef = collection(db, "users", currentUser.uid, "certificates");
+            const q = query(certsRef, where("courseId", "==", courseId));
+            const existingCert = await getCountFromServer(q);
+
+            if (existingCert.data().count > 0) {
+                console.log("Certificate already exists for this course.");
+                return;
+            }
+
+            const newCert = {
+                courseId: courseId,
+                name: `Certificate of Completion: ${coursesData[courseId].title}`,
+                issuer: "Skillpulse",
+                date: new Date(),
+            };
+            await addDoc(certsRef, newCert);
+        }
+
+        function renderCertificatesPage() {
+            const container = document.getElementById('certificates-container');
+            const certsRef = collection(db, "users", currentUser.uid, "certificates");
+            onSnapshot(certsRef, (snapshot) => {
+                container.innerHTML = snapshot.docs.length > 0 ? snapshot.docs.map(doc => {
+                    const cert = doc.data();
+                    cert.id = doc.id;
+                    const dateString = cert.date && cert.date.toDate ? cert.date.toDate().toLocaleDateString() : 'N/A';
+                    return `<div class="card p-6 flex flex-col justify-between"><div><h4 class="text-lg font-bold">${cert.name}</h4><p class="text-gray-500 text-sm">${cert.issuer}</p><p class="text-gray-400 text-xs mt-1">Earned on: ${dateString}</p></div><button data-cert-id="${cert.id}" class="mt-4 bg-violet-600 text-white font-bold py-2 px-4 rounded-xl text-center view-cert-btn">View Certificate</button></div>`;
+                }).join('') : '<p class="text-center text-gray-500 col-span-full mt-10">You have not added any certificates yet.</p>';
+            });
+        }
+
+        function renderCertificateView(cert) {
+            const modal = document.getElementById('certificate-modal');
+            modal.classList.remove('hidden');
+            const dateString = cert.date && cert.date.toDate ? cert.date.toDate().toLocaleDateString() : 'N/A';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg shadow-2xl p-8 max-w-3xl w-full text-center border-4 border-violet-500 relative">
+                    <div class="absolute top-4 right-4"><button id="close-cert-btn" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+                    <h1 class="text-5xl font-bold text-violet-800" style="font-family: 'Garamond', serif;">Certificate of Completion</h1>
+                    <p class="text-lg mt-8">This certifies that</p>
+                    <p class="text-4xl font-semibold my-4">${userData.fullName}</p>
+                    <p class="text-lg">has successfully completed the course</p>
+                    <p class="text-3xl font-medium my-4">${cert.name.replace('Certificate of Completion: ', '')}</p>
+                    <div class="flex justify-between items-center mt-12 text-sm text-gray-500">
+                        <div><p><strong>Issued by Skillpulse</strong></p><p>${dateString}</p></div>
+                        <div><p><strong>Certificate ID</strong></p><p>${cert.id}</p></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('close-cert-btn').onclick = () => modal.classList.add('hidden');
+        }
+
+
+        function renderSettingsPage() {
+            document.getElementById('settings-fullName').value = userData.fullName || '';
+            document.getElementById('settings-email').textContent = currentUser.email || 'N/A';
+            document.getElementById('settings-role').textContent = userData.role || 'N/A';
+        }
+
+        async function switchPage(targetPage, isDataUpdate = false) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.getElementById(`${targetPage}-page`).classList.add('active');
+
+            if (!isDataUpdate) {
+                document.querySelectorAll('#sidebar-nav a, a.sidebar-link[data-page]').forEach(l => l.classList.remove('active'));
+                const newActiveLink = document.querySelector(`#sidebar-nav a[data-page="${targetPage}"]`);
+                if (newActiveLink) newActiveLink.classList.add('active');
+            }
+
+            if (targetPage === 'courses') renderCoursesPage();
+            if (targetPage === 'certificates') renderCertificatesPage();
+            if (targetPage === 'dashboard') renderDashboardPage();
+            if (targetPage === 'settings') renderSettingsPage();
+            if (targetPage === 'playground') {
+                showProblemListView();
+                if (Object.keys(problemsData).length === 0) {
+                    await loadPlaygroundData();
+                }
+                renderProblemListView();
+                if (codeEditor) setTimeout(() => codeEditor.refresh(), 1);
+            }
+        }
+
+        function initializePlayground() {
+            codeEditor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+                mode: 'javascript',
+                theme: 'material-darker',
+                lineNumbers: true,
+                autoCloseBrackets: true
+            });
+        }
+
+        function renderProblemListView() {
+            const container = document.getElementById('problem-list-container');
+            if (Object.keys(problemsData).length === 0) {
+                container.innerHTML = '<p class="p-4 text-center text-gray-500">No problems loaded yet.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            Object.values(problemsData).forEach(problem => {
+                const difficultyColor = problem.difficulty === 'Easy' ? 'text-green-500' : problem.difficulty === 'Medium' ? 'text-yellow-500' : 'text-red-500';
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-5 p-4 border-b border-gray-200 cursor-pointer problem-item-row';
+                row.dataset.problemId = problem.id;
+                row.innerHTML = `
+                    <div class="col-span-3 font-medium text-gray-800">${problem.title}</div>
+                    <div class="col-span-2 font-medium ${difficultyColor}">${problem.difficulty}</div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function loadProblem(problemId) {
+            currentProblem = problemsData[problemId];
+            if (!currentProblem) { console.error("Problem not found:", problemId); return; }
+
+            document.getElementById('problem-list-view').classList.add('hidden');
+            document.getElementById('problem-solver-view').classList.remove('hidden');
+
+            document.getElementById('problem-title-header').textContent = currentProblem.title;
+            const container = document.getElementById('problem-description-container');
+            const difficultyColor = currentProblem.difficulty === 'Easy' ? 'text-green-500' : currentProblem.difficulty === 'Medium' ? 'text-yellow-500' : 'text-red-500';
+
+            const examplesHtml = currentProblem.testCases.map((testCase, index) => {
+                const input = JSON.stringify(JSON.parse(testCase.input));
+                const output = JSON.stringify(JSON.parse(testCase.expected));
+                return `<div class="mt-4"><p class="font-semibold">Example ${index + 1}:</p><pre class="bg-gray-100 p-2 rounded-md text-sm mt-1"><code><strong>Input:</strong> ${input}\n<strong>Output:</strong> ${output}</code></pre></div>`
+            }).join('');
+
+            container.innerHTML = `
+                <p class="font-semibold ${difficultyColor} mb-4">${currentProblem.difficulty}</p>
+                <div class="prose prose-sm max-w-none">${currentProblem.description.replace(/\n/g, '<br>')}</div>
+                <div class="mt-6">${examplesHtml}</div>`;
+
+            document.getElementById('language-select').value = '93'; // Default to JavaScript
+            updateEditorForLanguage('javascript');
+
+            document.getElementById('solution-output-container').innerHTML = 'Click "Run Solution" to test your code.';
+            setTimeout(() => codeEditor.refresh(), 1);
+        }
+
+        function updateEditorForLanguage(lang) {
+            if (!currentProblem) return;
+
+            const boilerplateLang = lang;
+            const boilerplate = currentProblem.boilerplate[boilerplateLang] || `// Boilerplate for ${boilerplateLang} not found.`;
+            codeEditor.setValue(boilerplate);
+
+            const runButton = document.getElementById('run-solution-btn');
+
+            const modeMap = { 'javascript': 'javascript', 'python': 'python', 'java': 'text/x-java', 'c': 'text/x-csrc', 'cpp': 'text/x-c++src' };
+            codeEditor.setOption("mode", modeMap[lang] || 'javascript');
+
+            runButton.disabled = false;
+            runButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+            document.getElementById('solution-output-container').innerHTML = 'Click "Run Solution" to test your code.';
+        }
+
+        function showProblemListView() {
+            document.getElementById('problem-list-view').classList.remove('hidden');
+            document.getElementById('problem-solver-view').classList.add('hidden');
+        }
+
+        async function runSolution() {
+            if (!currentProblem) { return; }
+
+            const selectedLangValue = document.getElementById('language-select').value;
+            const userCode = codeEditor.getValue();
+            const outputContainer = document.getElementById('solution-output-container');
+            outputContainer.innerHTML = '';
+
+            if (selectedLangValue === '93') {
+                runJavascriptSolution(userCode, outputContainer);
+            } else {
+                await runBackendSolution(selectedLangValue, userCode, outputContainer);
+            }
+        }
+
+        function runJavascriptSolution(userCode, outputContainer) {
+            let overallPassed = true;
+            const functionNameMatch = currentProblem.boilerplate.javascript.match(/function\s+([a-zA-Z0-9_]+)\s*\(/);
+            if (!functionNameMatch) {
+                outputContainer.innerHTML = `<div class="text-red-400">Error: Could not determine function name from boilerplate.</div>`;
+                return;
+            }
+            const functionName = functionNameMatch[1];
+
+            currentProblem.testCases.forEach((testCase, index) => {
+                const resultDiv = document.createElement('div');
+                try {
+                    const userFunction = new Function(`return (function() { ${userCode}\nreturn ${functionName}; })();`)();
+                    const args = JSON.parse(testCase.input);
+                    const actualOutput = userFunction(...args);
+                    const expectedOutput = JSON.parse(testCase.expected);
+
+                    const isCorrect = JSON.stringify(actualOutput) === JSON.stringify(expectedOutput);
+
+                    if (isCorrect) {
+                        resultDiv.className = 'text-green-400 p-2 border-b border-gray-700';
+                        resultDiv.textContent = `Case ${index + 1}: Passed`;
+                    } else {
+                        overallPassed = false;
+                        resultDiv.className = 'text-red-400 p-2 border-b border-gray-700';
+                        resultDiv.innerHTML = `<p>Case ${index + 1}: Failed</p><p class="text-xs text-gray-400">Input: ${JSON.stringify(args)}</p><p class="text-xs text-gray-400">Expected: ${JSON.stringify(expectedOutput)}</p><p class="text-xs text-gray-400">Got: ${JSON.stringify(actualOutput)}</p>`;
+                    }
+                } catch (error) {
+                    overallPassed = false;
+                    resultDiv.className = 'text-red-400 p-2 border-b border-gray-700';
+                    resultDiv.innerHTML = `<p>Case ${index + 1}: Runtime Error</p><p class="text-xs text-gray-400">${error.message}</p>`;
+                }
+                outputContainer.appendChild(resultDiv);
+            });
+
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `p-2 font-bold ${overallPassed ? 'text-green-400' : 'text-red-400'}`;
+            summaryDiv.textContent = overallPassed ? 'Accepted' : 'Wrong Answer';
+            outputContainer.prepend(summaryDiv);
+        }
+
+        async function runBackendSolution(languageId, userCode, outputContainer) {
+            const RAPIDAPI_KEY = "810ff4b88dmsh20e86226ee3444ep1de975jsn6b0244ecf08e";
+
+            if (RAPIDAPI_KEY === "YOUR_RAPIDAPI_KEY_HERE") {
+                outputContainer.innerHTML = `<div class="text-yellow-400">Code execution requires a RapidAPI key for Judge0. Please add it to the script.</div>`;
+                return;
+            }
+
+            let overallPassed = true;
+            const runButton = document.getElementById('run-solution-btn');
+            runButton.disabled = true;
+            const originalButtonHtml = runButton.innerHTML;
+            runButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Running...</span>`;
+
+            for (let i = 0; i < currentProblem.testCases.length; i++) {
+                const testCase = currentProblem.testCases[i];
+                const caseResultDiv = document.createElement('div');
+                caseResultDiv.className = 'text-gray-400 p-2 border-b border-gray-700';
+                caseResultDiv.textContent = `Case ${i + 1}: Running...`;
+                outputContainer.appendChild(caseResultDiv);
+
+                try {
+                    let parsedInput = JSON.parse(testCase.input);
+                    const stdin = Array.isArray(parsedInput) ? parsedInput.join('\n') : parsedInput.toString();
+                    let expectedOutput = JSON.parse(testCase.expected);
+                    expectedOutput = Array.isArray(expectedOutput) ? expectedOutput.join('\n') : expectedOutput.toString();
+
+                    const submissionResponse = await fetch('https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=true&wait=true&fields=*', {
+                        method: 'POST',
+                        headers: {
+                            'content-type': 'application/json',
+                            'X-RapidAPI-Key': RAPIDAPI_KEY,
+                            'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+                        },
+                        body: JSON.stringify({
+                            language_id: languageId,
+                            source_code: btoa(userCode),
+                            stdin: btoa(stdin),
+                            expected_output: btoa(expectedOutput)
+                        })
+                    });
+
+                    if (!submissionResponse.ok) {
+                        const errorBody = await submissionResponse.json();
+                        throw new Error(`API Error (${submissionResponse.status}): ${errorBody.message || JSON.stringify(errorBody)}`);
+                    }
+
+                    const result = await submissionResponse.json();
+                    const stdout = result.stdout ? atob(result.stdout).trim() : null;
+
+                    if (result.status.id === 3) {
+                        caseResultDiv.className = 'text-green-400 p-2 border-b border-gray-700';
+                        caseResultDiv.textContent = `Case ${index + 1}: Passed`;
+                    } else {
+                        overallPassed = false;
+                        caseResultDiv.className = 'text-red-400 p-2 border-b border-gray-700';
+                        const compile_output = result.compile_output ? atob(result.compile_output) : null;
+                        const stderr = result.stderr ? atob(result.stderr) : null;
+                        const errorMessage = compile_output || stderr || result.status.description;
+
+                        caseResultDiv.innerHTML = `<p>Case ${i + 1}: ${result.status.description}</p>
+                            <pre class="text-xs text-gray-400 whitespace-pre-wrap">${errorMessage}</pre>
+                            <p class="text-xs text-gray-400">Input: ${stdin}</p>
+                            <p class="text-xs text-gray-400">Expected: ${expectedOutput}</p>
+                            <p class="text-xs text-gray-400">Got: ${stdout || '(no output)'}</p>`;
+                    }
+
+                } catch (error) {
+                    overallPassed = false;
+                    caseResultDiv.className = 'text-red-400 p-2 border-b border-gray-700';
+                    caseResultDiv.innerHTML = `<p>Case ${i + 1}: API Error</p><p class="text-xs text-gray-400 break-all">${error.message}</p>`;
+                }
+            }
+
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `p-2 font-bold ${overallPassed ? 'text-green-400' : 'text-red-400'}`;
+            summaryDiv.textContent = overallPassed ? 'Accepted' : 'Failed';
+            outputContainer.prepend(summaryDiv);
+
+            runButton.disabled = false;
+            runButton.innerHTML = originalButtonHtml;
+            lucide.createIcons();
+        }
+
+        async function handleChatSubmit(event) {
+            event.preventDefault();
+            const chatInput = document.getElementById('chat-input');
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            appendMessageToChat(userMessage, 'user');
+            chatInput.value = '';
+            appendMessageToChat('...', 'ai', true);
+
+            try {
+                const apiKey = "AIzaSyBnJf1nuqk2RWo5w-FsSQhKDy9Q3nVBJg0";
+
+                if (apiKey === "YOUR_GOOGLE_AI_API_KEY_HERE") {
+                    throw new Error("API Key is missing for the AI Chatbot.");
+                }
+
+                const { courseId, moduleId } = currentCourseContext;
+                if (!courseId || !moduleId) throw new Error("No course context available.");
+
+                const moduleContent = coursesData[courseId].modules.find(m => m.id === moduleId).longContent;
+                const courseTitle = coursesData[courseId].title;
+                const moduleTitle = coursesData[courseId].modules.find(m => m.id === moduleId).title;
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const prompt = `You are an AI tutor for Skillpulse. A student is learning about "${moduleTitle}" in the "${courseTitle}" course. Answer their question based ONLY on the following context. If the answer is not in the context, say "I can only answer questions about the current module content." Context: ${moduleContent}. Student Question: ${userMessage}`;
+
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API Error (${response.status}): ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    throw new Error("Invalid response format from AI chatbot API.");
+                }
+
+                const aiResponse = result.candidates[0].content.parts[0].text;
+                updateTypingIndicator(aiResponse);
+
+            } catch (error) {
+                console.error("AI Chat Error:", error);
+                updateTypingIndicator(`Sorry, I encountered an error. ${error.message}`);
+            }
+        }
+
+        function appendMessageToChat(text, sender, isTyping = false) {
+            const chatHistory = document.getElementById('chat-history');
+            const messageWrapper = document.createElement('div');
+            if (sender === 'user') {
+                messageWrapper.innerHTML = `<div class="flex items-start space-x-3 flex-row-reverse"><img src="${document.getElementById('user-avatar').src}" class="h-9 w-9 rounded-full"><div class="bg-violet-600 text-white p-3 rounded-lg rounded-tr-none"><p class="text-sm">${text}</p></div></div>`;
+            } else {
+                if (isTyping) messageWrapper.id = 'typing-indicator';
+                messageWrapper.innerHTML = `<div class="flex items-start space-x-3"><div class="bg-gray-200 p-2 rounded-full flex-shrink-0"><i data-lucide="bot" class="h-5 w-5"></i></div><div class="bg-gray-200 p-3 rounded-lg rounded-tl-none"><p class="text-sm">${text}</p></div></div>`;
+            }
+            chatHistory.appendChild(messageWrapper);
+            lucide.createIcons();
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function updateTypingIndicator(text) {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.querySelector('p').innerHTML = text.replace(/\n/g, '<br>');
+                typingIndicator.id = '';
+            }
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('a[data-page]').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); switchPage(link.dataset.page); }); });
+            document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
+            document.getElementById('performance-modal-close-btn').addEventListener('click', () => document.getElementById('performance-modal').classList.remove('active'));
+
+            document.getElementById('run-solution-btn')?.addEventListener('click', runSolution);
+            document.getElementById('back-to-problems-btn')?.addEventListener('click', showProblemListView);
+            document.getElementById('language-select')?.addEventListener('change', (e) => {
+                const langValue = e.target.value;
+                const langName = { '93': 'javascript', '71': 'python', '62': 'java', '50': 'c', '54': 'cpp' }[langValue];
+                updateEditorForLanguage(langName);
+            });
+
+            document.body.addEventListener('click', async function (event) {
+                const courseActionBtn = event.target.closest('.course-action-btn');
+                if (courseActionBtn) { showCoursePlayer(courseActionBtn.dataset.courseId); return; }
+
+                const enrollBtn = event.target.closest('.enroll-btn');
+                if(enrollBtn) { enrollInCourse(enrollBtn.dataset.courseId); return; }
+                
+                const performanceBtn = event.target.closest('.view-performance-btn');
+                if(performanceBtn) { openPerformanceModal(performanceBtn.dataset.courseId); return; }
+
+                const problemRow = event.target.closest('.problem-item-row');
+                if (problemRow) { loadProblem(problemRow.dataset.problemId); return; }
+
+                const button = event.target.closest('button');
+                if (button) {
+                    if (button.matches('.resume-button')) { showCoursePlayer(button.dataset.courseId); }
+                    else if (button.matches('.explore-courses-button')) { switchPage('courses'); }
+                    else if (button.matches('.back-to-dashboard-btn')) {
+                        document.getElementById('page-wrapper').classList.remove('hidden');
+                        document.getElementById('sidebar').classList.remove('hidden');
+                        document.getElementById('course-player-page').classList.add('hidden');
+                        switchPage('courses');
+                    }
+                    else if (button.matches('.prev-module-btn') && !button.disabled) {
+                        const courseId = button.dataset.courseId;
+                        const currentIndex = parseInt(button.dataset.currentIndex);
+                        renderCoursePlayer(courseId, coursesData[courseId].modules[currentIndex - 1].id);
+                    }
+                    else if (button.matches('.complete-module-btn')) { handleModuleCompletion(button.dataset.courseId, button.dataset.moduleId); }
+                    else if (button.matches('#ai-chat-fab')) { document.getElementById('ai-chat-modal').classList.toggle('hidden'); }
+                    else if (button.matches('#close-chat-button')) { document.getElementById('ai-chat-modal').classList.add('hidden'); }
+                    else if (button.matches('.view-cert-btn')) {
+                        const certRef = doc(db, "users", currentUser.uid, "certificates", button.dataset.certId);
+                        const certSnap = await getDoc(certRef);
+                        if (certSnap.exists()) {
+                            const certData = certSnap.data();
+                            certData.id = certSnap.id;
+                            renderCertificateView(certData);
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('update-profile-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newName = document.getElementById('settings-fullName').value.trim();
+                const button = e.target.querySelector('button');
+                button.disabled = true;
+                button.textContent = 'Saving...';
+
+                try {
+                    await updateProfile(currentUser, { displayName: newName });
+                    await updateDoc(doc(db, "users", currentUser.uid), { fullName: newName });
+                    showToast('Profile updated successfully!');
+                } catch (error) {
+                    console.error("Error updating profile: ", error);
+                    showToast('Failed to update profile.', true);
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Save Changes';
+                }
+            });
+
+            document.getElementById('reset-password-button')?.addEventListener('click', () => {
+                sendPasswordResetEmail(auth, currentUser.email)
+                    .then(() => {
+                        showToast('Password reset email sent. Check your inbox!');
+                    })
+                    .catch((error) => {
+                        console.error("Error sending password reset email: ", error);
+                        showToast('Failed to send reset email.', true);
+                    });
+            });
+
+
+            const addCertModal = document.getElementById('add-certificate-modal');
+            const certForm = document.getElementById('add-certificate-form');
+            if (certForm) {
+                document.getElementById('add-certificate-button').addEventListener('click', () => addCertModal.classList.remove('hidden'));
+                document.getElementById('cancel-certificate-button').addEventListener('click', () => { addCertModal.classList.add('hidden'); certForm.reset(); });
+                window.addEventListener('click', e => { if (e.target === addCertModal) { addCertModal.classList.add('hidden'); certForm.reset(); }});
+                certForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const certsRef = collection(db, "users", currentUser.uid, "certificates");
+                    await addDoc(certsRef, { name: certForm.certificateName.value, issuer: certForm.certificateIssuer.value, date: new Date(certForm.certificateDate.value), url: certForm.certificateUrl.value });
+                    addCertModal.classList.add('hidden');
+                    certForm.reset();
+                });
+            }
+
+            const chatForm = document.getElementById('chat-form');
+            if (chatForm) {
+                chatForm.addEventListener('submit', handleChatSubmit);
+            }
+        }
+    </script>
+</body>
+
+</html>

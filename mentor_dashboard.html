@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentor Dashboard - Skillpulse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #1f2937;
+            --main-bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --primary-accent: #059669;
+            --primary-accent-hover: #047857;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .sidebar-link { transition: all 0.3s ease; transform: translateX(0); }
+        .sidebar-link.active, .sidebar-link:hover { 
+            background-color: var(--primary-accent); 
+            color: white; 
+            transform: translateX(4px);
+            box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.25);
+        }
+        .card { 
+            background-color: var(--card-bg); 
+            border-radius: 1rem; 
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+            transition: all 0.3s ease; 
+            border: 1px solid #e5e7eb;
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); 
+        }
+        .page-content { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .page-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Chat bubble styles */
+        .chat-bubble { max-width: 75%; }
+        .chat-bubble.student { background-color: #eef2ff; color: #4338ca; align-self: flex-start; border-radius: 1.25rem 1.25rem 1.25rem 0.25rem; }
+        .chat-bubble.mentor { background-color: #dcfce7; color: #166534; align-self: flex-end; border-radius: 1.25rem 1.25rem 0.25rem 1.25rem; }
+        
+        .student-list-item.active { background-color: #e5e7eb; }
+        .course-list-item.active { background-color: #d1fae5; }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+            animation: fadeIn 0.3s ease-in-out;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        .modal-content {
+            position: relative;
+            margin: auto;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+            z-index: 50;
+        }
+        .modal-backdrop.active { display: block; }
+        .modal-backdrop.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* Toast Notification Styles */
+        .toast-notification {
+            pointer-events: auto;
+        }
+        .toast-notification:hover {
+            transform: translateX(0) scale(1.02);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="loader" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100] transition-opacity duration-500">
+        <div id="loader-spinner" class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-600"></div>
+        <p id="loader-message" class="mt-4 text-gray-600 text-center">Connecting to Backend...</p>
+    </div>
+
+    <div id="app-container" class="flex h-screen bg-gray-100 opacity-0 transition-opacity duration-500">
+        <!-- Sidebar -->
+        <aside class="w-64 flex-shrink-0 bg-gray-800 text-gray-300 flex flex-col">
+            <div class="h-20 flex items-center justify-center px-6 border-b border-gray-700">
+                <a href="#" data-page="dashboard" class="sidebar-link-header flex items-center space-x-3">
+                    <svg class="h-8 w-8 text-emerald-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5z"/></svg>
+                    <span class="text-2xl font-bold text-white">Skillpulse</span>
+                </a>
+            </div>
+            <nav id="sidebar-nav" class="flex-1 px-4 py-4 space-y-2">
+                <a href="#" data-page="dashboard" class="sidebar-link active flex items-center px-4 py-3 rounded-lg"><i data-lucide="layout-dashboard" class="h-5 w-5 mr-3"></i><span>Dashboard</span></a>
+                <a href="#" data-page="students" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="users" class="h-5 w-5 mr-3"></i><span>My Students</span></a>
+                <a href="#" data-page="courses" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="book-copy" class="h-5 w-5 mr-3"></i><span>Courses</span></a>
+                <a href="#" data-page="feedback" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="message-square" class="h-5 w-5 mr-3"></i><span>Feedback Center</span></a>
+                <a href="#" data-page="settings" class="sidebar-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="settings" class="h-5 w-5 mr-3"></i><span>Settings</span></a>
+            </nav>
+            <div class="p-4 border-t border-gray-700">
+                <a href="#" data-page="settings" class="block p-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <img id="user-avatar" class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/100x100/10B981/FFFFFF?text=M" alt="Mentor Avatar">
+                        <div class="ml-3">
+                            <p id="user-name" class="font-semibold text-white">Loading...</p>
+                            <p id="user-role" class="text-sm text-gray-400">Mentor</p>
+                        </div>
+                    </div>
+                </a>
+                <button id="logout-btn" class="mt-4 w-full flex items-center justify-center text-sm py-2 px-4 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors duration-300"><i data-lucide="log-out" class="h-4 w-4 mr-2"></i>Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 overflow-y-auto">
+            <div id="page-wrapper" class="p-6 lg:p-10">
+                
+                <div id="dashboard-page" class="page-content active"></div>
+                <div id="students-page" class="page-content"></div>
+                <div id="courses-page" class="page-content"></div>
+                <div id="feedback-page" class="page-content"></div>
+                <div id="settings-page" class="page-content"></div>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="student-performance-modal" class="modal-backdrop"></div>
+    <div id="feedback-modal" class="modal-backdrop"></div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDofE9-vx5XzqPAT7qUdK_ub0L-283kN4M",
+            authDomain: "skillpulse-d121f.firebaseapp.com",
+            projectId: "skillpulse-d121f",
+            storageBucket: "skillpulse-d121f.appspot.com",
+            messagingSenderId: "350596146985",
+            appId: "1:350596146985:web:8b32779f769623adb4b938"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:8080/api';
+
+
+
+        let myStudents = [];
+        let courses = [];
+        let mentorData = {};
+        let enrollmentPieChart = null;
+        let moduleScoresChart = null;
+        let unsubscribeFeedback = null;
+        let currentFeedback = { studentId: null, courseId: null };
+        
+        // Real-time listeners
+        let studentsListener = null;
+        let coursesListener = null;
+        
+        // Auto-timeout to prevent hanging
+        setTimeout(() => {
+            if (loader && !loader.classList.contains('opacity-0')) {
+                console.log('Auto-timeout: Loading took too long, continuing with empty data');
+                myStudents = [];
+                courses = [];
+                if (auth.currentUser && mentorData) {
+                    initializeDashboard(auth.currentUser).catch(console.error);
+                }
+            }
+        }, 15000); // 15 second absolute timeout
+        
+        const loader = document.getElementById('loader');
+        const loaderMessage = document.getElementById('loader-message');
+        const loaderSpinner = document.getElementById('loader-spinner');
+        const appContainer = document.getElementById('app-container');
+        
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    console.log('User authenticated:', user.uid, user.email);
+                    loaderMessage.textContent = 'Verifying user role...';
+                    
+                    const userDocSnap = await db.collection("users").doc(user.uid).get();
+                    if (!userDocSnap.exists) {
+                        console.error('User document not found in Firestore');
+                        loaderMessage.innerHTML = `<p class="text-red-500 text-center font-semibold">User profile not found. Please contact support.</p>`;
+                        setTimeout(() => {
+                            auth.signOut();
+                            window.location.href = 'login.html';
+                        }, 3000);
+                        return;
+                    }
+                    
+                    const userData = userDocSnap.data();
+                    console.log('User data:', userData);
+                    
+                    if (userData.role !== 'mentor') {
+                        console.error('User is not a mentor:', userData.role);
+                        loaderMessage.innerHTML = `<p class="text-red-500 text-center font-semibold">Access denied. This dashboard is for mentors only.</p>`;
+                        setTimeout(() => {
+                            auth.signOut();
+                            window.location.href = 'login.html';
+                        }, 3000);
+                        return;
+                    }
+                    
+                    mentorData = { id: user.uid, ...userData };
+                    console.log('Mentor data loaded:', mentorData);
+                    
+                    // Load data with timeout and fallback
+                    await loadDataWithFallback();
+                    await initializeDashboard(user);
+                    
+                } catch(error) {
+                    console.error("Initialization Error:", error);
+                    
+                    // Don't fail completely, show dashboard with empty data
+                    myStudents = [];
+                    courses = [];
+                    
+                    loaderMessage.innerHTML = `
+                        <div class="text-yellow-600 text-center font-semibold">
+                            <p>⚠️ Loading with limited data</p>
+                            <p class="text-sm mt-2">Error: ${error.message}</p>
+                            <p class="text-xs mt-2">Dashboard will load with empty data. You can try refreshing later.</p>
+                            <button onclick="initializeDashboard(auth.currentUser).catch(console.error)" class="mt-4 px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600">
+                                Continue to Dashboard
+                            </button>
+                        </div>
+                    `;
+                }
+            } else {
+                console.log('No user authenticated, redirecting to login');
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadDataWithFallback() {
+            const user = auth.currentUser;
+            if (!user) throw new Error('User not authenticated');
+            
+            // Method 1: Try Backend API (with timeout)
+            try {
+                loaderMessage.textContent = 'Connecting to backend API...';
+                
+                const token = await user.getIdToken();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+                
+                const response = await fetch('http://localhost:8080/api/mentor/students', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    myStudents = await response.json();
+                    
+                    // Try to get courses too
+                    try {
+                        const coursesResponse = await fetch('http://localhost:8080/api/mentor/courses', {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        courses = coursesResponse.ok ? await coursesResponse.json() : [];
+                    } catch {
+                        courses = [];
+                    }
+                    
+                    loaderMessage.textContent = `✅ Backend: ${myStudents.length} students, ${courses.length} courses`;
+                    return; // Success!
+                }
+            } catch (error) {
+                console.warn('Backend failed:', error.message);
+            }
+            
+            // Method 2: Firebase Direct (fallback)
+            try {
+                loaderMessage.textContent = 'Loading from Firebase database...';
+                
+                const [studentsSnapshot, coursesSnapshot] = await Promise.all([
+                    db.collection("users").where("mentorId", "==", user.uid).where("role", "==", "student").get(),
+                    db.collection("courses").get()
+                ]);
+                
+                myStudents = [];
+                studentsSnapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    const courseCount = Object.keys(data.courseData || {}).length;
+                    const avgProgress = courseCount > 0 ? 
+                        Object.values(data.courseData || {}).reduce((sum, course) => sum + (course.progress || 0), 0) / courseCount : 0;
+                    
+                    myStudents.push({
+                        id: doc.id,
+                        fullName: data.fullName,
+                        email: data.email,
+                        institutionName: data.institutionName,
+                        enrolledCourseCount: courseCount,
+                        averageProgress: avgProgress,
+                        enrolledCourses: [],
+                        courseData: data.courseData || {}
+                    });
+                });
+                
+                courses = [];
+                coursesSnapshot.docs.forEach(doc => {
+                    courses.push({ id: doc.id, ...doc.data() });
+                });
+                
+                loaderMessage.textContent = `✅ Firebase: ${myStudents.length} students, ${courses.length} courses`;
+                return; // Success!
+                
+            } catch (error) {
+                console.warn('Firebase failed:', error.message);
+            }
+            
+            // Method 3: Empty data (last resort)
+            myStudents = [];
+            courses = [];
+            loaderMessage.textContent = '⚠️ No data loaded - showing empty dashboard';
+        }
+
+        async function getAuthHeader() {
+            const user = auth.currentUser;
+            if (!user) throw new Error("User not authenticated");
+            const token = await user.getIdToken();
+            return { 'Authorization': `Bearer ${token}` };
+        }
+
+        async function fetchDataFromBackend() {
+            try {
+                const headers = await getAuthHeader();
+                console.log('Making request to:', `${API_BASE_URL}/mentor/students`);
+                console.log('Headers:', headers);
+                
+                // Fetch students
+                const studentsResponse = await fetch(`${API_BASE_URL}/mentor/students`, { 
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...headers
+                    }
+                });
+
+                console.log('Students response status:', studentsResponse.status);
+                
+                if (!studentsResponse.ok) {
+                    const errorText = await studentsResponse.text();
+                    console.error('Backend error response:', errorText);
+                    
+                    if(studentsResponse.status === 401) {
+                        console.log('Unauthorized - signing out');
+                        auth.signOut();
+                        return;
+                    }
+                    throw new Error(`Backend request failed with status ${studentsResponse.status}: ${errorText}`);
+                }
+                
+                myStudents = await studentsResponse.json();
+                console.log('Students data:', myStudents);
+                
+                // Fetch all courses
+                const coursesResponse = await fetch(`${API_BASE_URL}/mentor/courses`, { 
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...headers
+                    }
+                });
+
+                if (coursesResponse.ok) {
+                    courses = await coursesResponse.json();
+                    console.log('Courses data:', courses);
+                } else {
+                    // Fallback to courses from students if direct course fetch fails
+                    const allCourses = myStudents.flatMap(s => s.enrolledCourses || []);
+                    courses = [...new Map(allCourses.map(item => [item['id'], item])).values()];
+                }
+                
+                console.log('Processed students:', myStudents.length);
+                console.log('Processed courses:', courses.length);
+            } catch (error) {
+                console.error('Error in fetchDataFromBackend:', error);
+                throw error;
+            }
+        }
+
+        async function initializeDashboard(user) {
+            const displayName = user.displayName || mentorData.fullName || 'Mentor';
+            document.getElementById('user-name').textContent = displayName;
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=059669&color=fff&bold=true`;
+            
+            setupEventListeners();
+            await switchPage('dashboard');
+            
+            loader.classList.add('opacity-0');
+            setTimeout(() => {
+                loader.style.display = 'none';
+                appContainer.classList.remove('opacity-0');
+                lucide.createIcons();
+            }, 500);
+        }
+        
+        async function updateDynamicContent() {
+            const activePageId = document.querySelector('.page-content.active')?.id;
+            if (!activePageId) return;
+            const pageName = activePageId.replace('-page', '');
+
+            if (pageName === 'dashboard') renderDashboardPage();
+            if (pageName === 'students') renderStudentsPage();
+            if (pageName === 'courses') await renderCoursesPage();
+            if (pageName === 'feedback') renderFeedbackPage();
+            if (pageName === 'settings') renderSettingsPage();
+        }
+
+        async function switchPage(targetPage) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.getElementById(`${targetPage}-page`).classList.add('active');
+            
+            document.querySelectorAll('#sidebar-nav a').forEach(l => l.classList.remove('active'));
+            const activeLink = document.querySelector(`#sidebar-nav a[data-page="${targetPage}"]`);
+            if(activeLink) activeLink.classList.add('active');
+            
+            await updateDynamicContent();
+        }
+
+        function renderDashboardPage() {
+            const container = document.getElementById('dashboard-page');
+            const mentorName = mentorData.fullName ? mentorData.fullName.split(' ')[0] : 'Mentor';
+            
+            // Calculate total enrollments across all courses
+            const totalEnrollments = myStudents.reduce((sum, s) => sum + (s.enrolledCourseCount || 0), 0);
+            
+            container.innerHTML = `
+                <header class="mb-8">
+                    <h1 class="text-4xl font-extrabold text-gray-800">Welcome, ${mentorName}!</h1>
+                    <p class="text-gray-500 mt-2 text-lg">Here's an overview of your student activity</p>
+                </header>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+                    <div class="card p-6 flex items-center space-x-4">
+                        <div class="bg-emerald-100 text-emerald-600 p-3 rounded-full"><i data-lucide="users" class="h-6 w-6"></i></div>
+                        <div><p class="text-sm text-gray-500">My Students</p><p class="text-2xl font-bold">${myStudents.length}</p></div>
+                    </div>
+                    <div class="card p-6 flex items-center space-x-4">
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><i data-lucide="book-copy" class="h-6 w-6"></i></div>
+                        <div><p class="text-sm text-gray-500">Available Courses</p><p class="text-2xl font-bold">${courses.length}</p></div>
+                    </div>
+                    <div class="card p-6 flex items-center space-x-4">
+                        <div class="bg-yellow-100 text-yellow-600 p-3 rounded-full"><i data-lucide="activity" class="h-6 w-6"></i></div>
+                        <div><p class="text-sm text-gray-500">Total Enrollments</p><p class="text-2xl font-bold">${totalEnrollments}</p></div>
+                    </div>
+                </div>
+                
+                <!-- Additional Enrollment Statistics -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="card p-4 text-center">
+                        <div class="text-lg font-bold text-emerald-600">${myStudents.filter(s => (s.enrolledCourseCount || 0) > 0).length}</div>
+                        <div class="text-xs text-emerald-600">Students Enrolled</div>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <div class="text-lg font-bold text-gray-600">${myStudents.filter(s => (s.enrolledCourseCount || 0) === 0).length}</div>
+                        <div class="text-xs text-gray-600">Students Not Enrolled</div>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <div class="text-lg font-bold text-blue-600">${myStudents.length > 0 ? Math.round((myStudents.filter(s => (s.enrolledCourseCount || 0) > 0).length / myStudents.length) * 100) : 0}%</div>
+                        <div class="text-xs text-blue-600">Enrollment Rate</div>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <div class="text-lg font-bold text-purple-600">${myStudents.length > 0 ? (totalEnrollments / myStudents.length).toFixed(1) : 0}</div>
+                        <div class="text-xs text-purple-600">Avg Courses/Student</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Student Progress Overview -->
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4">Student Progress Overview</h3>
+                        <div class="space-y-4">
+                            ${myStudents.length > 0 ? myStudents.slice(0, 5).map(student => `
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.fullName)}&background=059669&color=fff" alt="">
+                                        <div>
+                                            <p class="font-medium text-sm">${student.fullName}</p>
+                                            <p class="text-xs text-gray-500">${student.enrolledCourseCount || 0} courses</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-semibold">${(student.averageProgress || 0).toFixed(1)}%</p>
+                                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                                            <div class="bg-emerald-600 h-2 rounded-full" style="width: ${student.averageProgress || 0}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : '<p class="text-center text-gray-500 py-8">No students have selected you as mentor yet.</p>'}
+                        </div>
+                    </div>
+                    
+                    <!-- Student Enrollment Status Pie Chart -->
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4">Student Enrollment Status</h3>
+                        <div class="flex flex-col items-center">
+                            <canvas id="enrollment-pie-chart" width="200" height="200" class="mb-4"></canvas>
+                            <div class="text-center space-y-3">
+                                <div class="grid grid-cols-1 gap-2 text-sm">
+                                    <div class="flex items-center justify-between p-2 bg-emerald-50 rounded">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                                            <span class="font-medium">Enrolled</span>
+                                        </div>
+                                        <span class="font-bold text-emerald-600" id="enrolled-count">${myStudents.filter(s => (s.enrolledCourseCount || 0) > 0).length}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                            <span class="font-medium">Not Enrolled</span>
+                                        </div>
+                                        <span class="font-bold text-gray-600" id="not-enrolled-count">${myStudents.filter(s => (s.enrolledCourseCount || 0) === 0).length}</span>
+                                    </div>
+                                </div>
+                                ${myStudents.length > 0 ? `
+                                    <div class="text-xs text-gray-500 mt-2">
+                                        ${Math.round((myStudents.filter(s => (s.enrolledCourseCount || 0) > 0).length / myStudents.length) * 100)}% enrollment rate
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Students Needing Attention -->
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-4">Students Needing Attention</h3>
+                        <div class="space-y-3">
+                            ${(() => {
+                                const notEnrolledStudents = myStudents.filter(s => (s.enrolledCourseCount || 0) === 0);
+                                const lowProgressStudents = myStudents.filter(s => (s.enrolledCourseCount || 0) > 0 && (s.averageProgress || 0) < 25);
+                                const studentsNeedingAttention = [...notEnrolledStudents.slice(0, 2), ...lowProgressStudents.slice(0, 1)];
+                                
+                                if (studentsNeedingAttention.length === 0) {
+                                    return '<p class="text-center text-gray-500 py-4">All students are progressing well! 🎉</p>';
+                                }
+                                
+                                return studentsNeedingAttention.map(student => {
+                                    const isNotEnrolled = (student.enrolledCourseCount || 0) === 0;
+                                    return `
+                                        <div class="flex items-center space-x-3 p-3 ${isNotEnrolled ? 'bg-red-50' : 'bg-yellow-50'} rounded-lg">
+                                            <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.fullName)}&background=${isNotEnrolled ? 'EF4444' : 'F59E0B'}&color=fff" alt="">
+                                            <div class="flex-1">
+                                                <p class="font-medium text-sm">${student.fullName}</p>
+                                                <p class="text-xs text-gray-500">${student.email}</p>
+                                                <p class="text-xs ${isNotEnrolled ? 'text-red-600' : 'text-yellow-600'}">
+                                                    ${isNotEnrolled ? 'Not enrolled in any courses' : `Low progress: ${(student.averageProgress || 0).toFixed(0)}%`}
+                                                </p>
+                                            </div>
+                                            <button onclick="viewStudentDetails('${student.id}')" class="text-xs px-2 py-1 ${isNotEnrolled ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'} rounded">
+                                                View
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('');
+                            })()}
+                        </div>
+                    </div>
+                </div>`;
+            
+            // Create the enrollment pie chart after DOM is updated
+            setTimeout(() => {
+                createEnrollmentPieChart();
+            }, 100);
+            lucide.createIcons();
+        }
+
+        function createEnrollmentPieChart() {
+            const canvas = document.getElementById('enrollment-pie-chart');
+            if (!canvas) return;
+            
+            // Calculate enrollment statistics
+            const enrolledStudents = myStudents.filter(student => (student.enrolledCourseCount || 0) > 0).length;
+            const notEnrolledStudents = myStudents.length - enrolledStudents;
+            
+            // Handle case when no students
+            if (myStudents.length === 0) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '14px Inter';
+                ctx.fillStyle = '#9CA3AF';
+                ctx.fillText('No students yet', canvas.width / 2, canvas.height / 2);
+                ctx.restore();
+                return;
+            }
+            
+            // Create the pie chart
+            const chart = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Enrolled in Courses', 'Not Enrolled'],
+                    datasets: [{
+                        data: [enrolledStudents, notEnrolledStudents],
+                        backgroundColor: [
+                            '#10B981', // Emerald-500 for enrolled
+                            '#E5E7EB'  // Gray-200 for not enrolled
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        cutout: '65%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1F2937',
+                            titleColor: '#F9FAFB',
+                            bodyColor: '#F9FAFB',
+                            borderColor: '#374151',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = enrolledStudents + notEnrolledStudents;
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${label}: ${value} students (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        duration: 1000
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    beforeDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                        const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+                        
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        
+                        // Main number
+                        ctx.font = 'bold 28px Inter';
+                        ctx.fillStyle = '#1F2937';
+                        ctx.fillText(myStudents.length.toString(), centerX, centerY - 8);
+                        
+                        // Label
+                        ctx.font = '12px Inter';
+                        ctx.fillStyle = '#6B7280';
+                        ctx.fillText('Total Students', centerX, centerY + 15);
+                        
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+
+        function renderStudentsPage() {
+            const container = document.getElementById('students-page');
+            container.innerHTML = `
+                <header class="mb-8">
+                    <h1 class="text-4xl font-extrabold text-gray-800">My Students</h1>
+                    <p class="text-gray-500 mt-2">Students who selected you as their mentor (fetched from Firebase)</p>
+                </header>
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Student Name</th>
+                                    <th scope="col" class="px-6 py-3">Email</th>
+                                    <th scope="col" class="px-6 py-3">Institution</th>
+                                    <th scope="col" class="px-6 py-3">Courses Enrolled</th>
+                                    <th scope="col" class="px-6 py-3">Avg. Progress</th>
+                                    <th scope="col" class="px-6 py-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${myStudents.length > 0 ? myStudents.map(student => `
+                                    <tr class="bg-white border-b hover:bg-gray-50">
+                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                            <div class="flex items-center space-x-3">
+                                                <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.fullName)}&background=059669&color=fff" alt="">
+                                                <span>${student.fullName}</span>
+                                            </div>
+                                        </th>
+                                        <td class="px-6 py-4">${student.email}</td>
+                                        <td class="px-6 py-4">${student.institutionName || 'N/A'}</td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                                ${student.enrolledCourseCount || 0} courses
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                                    <div class="bg-emerald-600 h-2.5 rounded-full" style="width: ${(student.averageProgress || 0).toFixed(0)}%"></div>
+                                                </div>
+                                                <span class="text-xs font-medium">${(student.averageProgress || 0).toFixed(0)}%</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <button class="text-emerald-600 hover:text-emerald-900 text-sm font-medium" onclick="viewStudentDetails('${student.id}')">
+                                                View Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('') : `
+                                    <tr>
+                                        <td colspan="6" class="text-center py-12 text-gray-500">
+                                            <div class="flex flex-col items-center">
+                                                <i data-lucide="users" class="h-12 w-12 text-gray-300 mb-4"></i>
+                                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Students Yet</h3>
+                                                <p class="text-gray-500">Students haven't selected you as their mentor yet.</p>
+                                                <p class="text-sm text-gray-400 mt-2">Students can select you in their dashboard settings.</p>
+                                                <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 text-sm">
+                                                    Refresh Data
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            lucide.createIcons();
+        }
+        
+        window.viewStudentDetails = function(studentId) {
+            const student = myStudents.find(s => s.id === studentId);
+            if (student) {
+                showStudentDetailsModal(student);
+            }
+        };
+
+        function showStudentDetailsModal(student) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Student Details</h2>
+                        <button class="close-modal text-gray-400 hover:text-gray-600">
+                            <i data-lucide="x" class="h-6 w-6"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <!-- Student Info -->
+                        <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                            <img class="h-16 w-16 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.fullName)}&background=059669&color=fff" alt="">
+                            <div>
+                                <h3 class="text-xl font-semibold">${student.fullName}</h3>
+                                <p class="text-gray-600">${student.email}</p>
+                                <p class="text-sm text-gray-500">${student.institutionName || 'Institution not specified'}</p>
+                            </div>
+                        </div>
+
+                        <!-- Progress Overview -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-blue-600">${student.enrolledCourseCount || 0}</div>
+                                <div class="text-sm text-blue-600">Enrolled Courses</div>
+                            </div>
+                            <div class="bg-emerald-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-emerald-600">${(student.averageProgress || 0).toFixed(1)}%</div>
+                                <div class="text-sm text-emerald-600">Average Progress</div>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-yellow-600">${student.completedCourses || 0}</div>
+                                <div class="text-sm text-yellow-600">Completed Courses</div>
+                            </div>
+                        </div>
+
+                        <!-- Enrolled Courses -->
+                        <div>
+                            <h4 class="text-lg font-semibold mb-3">Enrolled Courses</h4>
+                            <div class="space-y-3">
+                                ${student.enrolledCourses && student.enrolledCourses.length > 0 ? 
+                                    student.enrolledCourses.map(course => {
+                                        const courseInfo = courses.find(c => c.id === course.id) || course;
+                                        const progress = course.progress || 0;
+                                        return `
+                                            <div class="flex items-center justify-between p-3 border rounded-lg">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
+                                                        ${courseInfo.title ? courseInfo.title.substring(0,2) : 'C'}
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-medium">${courseInfo.title || 'Course'}</p>
+                                                        <p class="text-sm text-gray-500">Progress: ${progress}%</p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <div class="w-20 bg-gray-200 rounded-full h-2">
+                                                        <div class="bg-emerald-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                                                    </div>
+                                                    <span class="text-xs font-medium">${progress}%</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('') 
+                                    : '<p class="text-gray-500 text-center py-4">No courses enrolled yet</p>'
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end pt-4 border-t">
+                            <button class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700" onclick="this.closest('.fixed').remove()">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            lucide.createIcons();
+            
+            // Close modal handlers
+            modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        }
+        
+         async function renderCoursesPage() {
+            const container = document.getElementById('courses-page');
+            
+            // Show loading state first
+            container.innerHTML = `
+                <header class="mb-8 flex justify-between items-center">
+                    <h1 class="text-4xl font-extrabold text-gray-800">Courses</h1>
+                    <div id="course-back-button" class="hidden"><button class="flex items-center text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"><i data-lucide="arrow-left" class="h-4 w-4 mr-2"></i> Back to Courses</button></div>
+                </header>
+                <div id="courses-view">
+                    <p class="text-gray-500 mb-6">Click on a course to see student enrollment and progress.</p>
+                    <div id="courses-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="col-span-full text-center py-8">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
+                            <p class="mt-2 text-gray-500">Loading course enrollment data...</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="course-detail-view" class="hidden">
+                    <h2 id="course-detail-title" class="text-3xl font-bold text-gray-800 mb-4"></h2>
+                    <p class="text-gray-600 mb-6">Students enrolled in this course and their progress</p>
+                    <div id="course-detail-student-list" class="card p-0 divide-y divide-gray-100"></div>
+                </div>`;
+            
+            // Calculate enrollment counts for each course
+            try {
+                const courseEnrollments = await calculateCourseEnrollments();
+                
+                // Update the courses list with correct enrollment counts
+                const coursesListContainer = document.getElementById('courses-list-container');
+                coursesListContainer.innerHTML = courses.map(course => {
+                    const enrolledCount = courseEnrollments[course.id] || 0;
+                    return `
+                        <div class="card p-6 cursor-pointer hover:shadow-lg transition-shadow" data-course-id="${course.id}">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-xl bg-emerald-500">
+                                    ${course.title.substring(0,2)}
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold">${course.title}</h3>
+                                    <p class="text-sm text-gray-500">${enrolledCount} of your students enrolled</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-emerald-600 font-medium">Click to view student progress →</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('Error calculating course enrollments:', error);
+                const coursesListContainer = document.getElementById('courses-list-container');
+                coursesListContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <i data-lucide="alert-circle" class="h-12 w-12 text-red-300 mx-auto mb-4"></i>
+                        <p class="text-red-600">Error loading enrollment data</p>
+                        <button onclick="renderCoursesPage()" class="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        async function calculateCourseEnrollments() {
+            const enrollments = {};
+            
+            // Initialize all courses with 0 enrollments
+            courses.forEach(course => {
+                enrollments[course.id] = 0;
+            });
+            
+            // Get all students who have this mentor
+            const studentsSnapshot = await db.collection("users")
+                .where("mentorId", "==", auth.currentUser.uid)
+                .where("role", "==", "student")
+                .get();
+            
+            // Count enrollments for each course
+            studentsSnapshot.docs.forEach(doc => {
+                const studentData = doc.data();
+                const courseData = studentData.courseData || {};
+                
+                // For each course the student has data for, increment the enrollment count
+                Object.keys(courseData).forEach(courseId => {
+                    if (enrollments.hasOwnProperty(courseId)) {
+                        enrollments[courseId]++;
+                    }
+                });
+            });
+            
+            return enrollments;
+        }
+        
+        async function showCourseDetail(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            document.getElementById('courses-view').classList.add('hidden');
+            document.getElementById('course-detail-view').classList.remove('hidden');
+            document.getElementById('course-back-button').classList.remove('hidden');
+            document.getElementById('course-detail-title').textContent = course.title;
+            
+            const studentListContainer = document.getElementById('course-detail-student-list');
+            studentListContainer.innerHTML = '<div class="p-6 text-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div><p class="mt-2">Loading student analytics...</p></div>';
+            
+            try {
+                // Load students directly from Firebase with detailed analytics
+                const enrolledStudents = await loadCourseStudentsFromFirebase(courseId);
+                console.log('Students in course:', enrolledStudents);
+                
+                if (enrolledStudents.length > 0) {
+                    studentListContainer.innerHTML = enrolledStudents.map(student => {
+                        const courseData = student.courseData || {};
+                        const progress = courseData.progress || 0;
+                        const score = courseData.score || 0;
+                        const completedModules = courseData.completedModules || [];
+                        const totalModules = course.modules ? course.modules.length : 0;
+                        const startDate = courseData.startDate ? new Date(courseData.startDate.seconds * 1000) : null;
+                        const lastActivity = courseData.lastActivity ? new Date(courseData.lastActivity.seconds * 1000) : null;
+                        const completionDate = courseData.completionDate ? new Date(courseData.completionDate.seconds * 1000) : null;
+                        
+                        // Calculate time spent
+                        let timeSpent = 'Not started';
+                        if (startDate && lastActivity) {
+                            const daysDiff = Math.ceil((lastActivity - startDate) / (1000 * 60 * 60 * 24));
+                            timeSpent = `${daysDiff} days`;
+                        }
+                        
+                        // Status badge
+                        let statusBadge = '';
+                        if (progress === 100) {
+                            statusBadge = '<span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">Completed</span>';
+                        } else if (progress > 0) {
+                            statusBadge = '<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">In Progress</span>';
+                        } else {
+                            statusBadge = '<span class="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded">Not Started</span>';
+                        }
+                        
+                        return `
+                            <div class="p-6 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-start space-x-4">
+                                        <img class="h-12 w-12 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.fullName)}&background=E5E7EB&color=374151" alt="">
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-3 mb-2">
+                                                <h4 class="font-semibold text-gray-900">${student.fullName}</h4>
+                                                ${statusBadge}
+                                            </div>
+                                            <p class="text-sm text-gray-600 mb-3">${student.email}</p>
+                                            
+                                            <!-- Progress Overview -->
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                                    <div class="text-lg font-bold text-blue-600">${progress.toFixed(0)}%</div>
+                                                    <div class="text-xs text-blue-600">Progress</div>
+                                                </div>
+                                                <div class="text-center p-3 bg-emerald-50 rounded-lg">
+                                                    <div class="text-lg font-bold text-emerald-600">${score}%</div>
+                                                    <div class="text-xs text-emerald-600">Assessment</div>
+                                                </div>
+                                                <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                                    <div class="text-lg font-bold text-purple-600">${completedModules.length}/${totalModules}</div>
+                                                    <div class="text-xs text-purple-600">Modules</div>
+                                                </div>
+                                                <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                                                    <div class="text-lg font-bold text-yellow-600">${timeSpent}</div>
+                                                    <div class="text-xs text-yellow-600">Duration</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Progress Bar -->
+                                            <div class="mb-3">
+                                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                                    <span>Course Progress</span>
+                                                    <span>${progress.toFixed(0)}%</span>
+                                                </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-emerald-600 h-2 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Timeline Info -->
+                                            <div class="text-xs text-gray-500 space-y-1">
+                                                ${startDate ? `<div>Started: ${startDate.toLocaleDateString()}</div>` : ''}
+                                                ${lastActivity ? `<div>Last Activity: ${lastActivity.toLocaleDateString()}</div>` : ''}
+                                                ${completionDate ? `<div>Completed: ${completionDate.toLocaleDateString()}</div>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="flex flex-col space-y-2 ml-4">
+                                        <button class="view-analytics-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors" data-student-id="${student.id}" data-course-id="${courseId}">
+                                            <i data-lucide="bar-chart-3" class="h-4 w-4 mr-2 inline"></i>
+                                            Detailed Analytics
+                                        </button>
+                                        <button class="give-feedback-btn px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors" data-student-id="${student.id}" data-course-id="${courseId}">
+                                            <i data-lucide="message-circle" class="h-4 w-4 mr-2 inline"></i>
+                                            Send Feedback
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    studentListContainer.innerHTML = `
+                        <div class="text-center py-12">
+                            <i data-lucide="users-x" class="h-16 w-16 text-gray-300 mx-auto mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Students Enrolled</h3>
+                            <p class="text-gray-500">None of your students are currently enrolled in this course.</p>
+                        </div>
+                    `;
+                }
+                
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('Error loading course students:', error);
+                studentListContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <i data-lucide="alert-circle" class="h-16 w-16 text-red-300 mx-auto mb-4"></i>
+                        <h3 class="text-lg font-medium text-red-900 mb-2">Error Loading Data</h3>
+                        <p class="text-red-600 mb-4">${error.message}</p>
+                        <button onclick="showCourseDetail('${courseId}')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        async function loadCourseStudentsFromFirebase(courseId) {
+            const enrolledStudents = [];
+            
+            // Get all students who have this mentor and have course data for this course
+            const studentsSnapshot = await db.collection("users")
+                .where("mentorId", "==", auth.currentUser.uid)
+                .where("role", "==", "student")
+                .get();
+            
+            studentsSnapshot.docs.forEach(doc => {
+                const studentData = doc.data();
+                const courseData = studentData.courseData && studentData.courseData[courseId];
+                
+                // Only include students who are enrolled in this course
+                if (courseData) {
+                    enrolledStudents.push({
+                        id: doc.id,
+                        fullName: studentData.fullName,
+                        email: studentData.email,
+                        institutionName: studentData.institutionName,
+                        courseData: courseData
+                    });
+                }
+            });
+            
+            return enrolledStudents;
+        }
+        
+        function renderFeedbackPage() {
+             const container = document.getElementById('feedback-page');
+             container.innerHTML = `
+                <header class="mb-8">
+                    <h1 class="text-4xl font-extrabold text-gray-800">Feedback Center</h1>
+                    <p class="text-gray-500 mt-2">Send feedback to your students about their course progress</p>
+                    <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-start space-x-3">
+                            <i data-lucide="info" class="h-5 w-5 text-blue-600 mt-0.5"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-medium mb-1">How to send feedback:</p>
+                                <ol class="list-decimal list-inside space-y-1 text-blue-700">
+                                    <li>Select a student from the left panel</li>
+                                    <li>Choose a course they're enrolled in</li>
+                                    <li>Type your feedback message and press Send</li>
+                                </ol>
+                                <p class="mt-2 text-xs">You can also use "Quick Feedback" for general messages not tied to a specific course.</p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+                    <div class="lg:col-span-1 flex flex-col gap-6">
+                        <div class="card p-4 flex-grow flex flex-col">
+                            <h3 class="font-bold text-lg mb-3 px-2">Select a Student</h3>
+                            <div id="feedback-student-list" class="flex-1 overflow-y-auto space-y-1"></div>
+                        </div>
+                        <div class="card p-4 flex-grow flex flex-col">
+                            <h3 class="font-bold text-lg mb-3 px-2">Select a Course</h3>
+                            <div id="feedback-course-list" class="flex-1 overflow-y-auto space-y-1"></div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 card p-0 flex flex-col h-full">
+                        <div id="feedback-chat-container" class="flex-1 p-6 flex flex-col"></div>
+                    </div>
+                </div>`;
+            
+            const studentList = document.getElementById('feedback-student-list');
+            studentList.innerHTML = myStudents.length > 0 ? 
+                myStudents.map(s => `
+                    <div class="student-list-item p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border-l-4 border-transparent hover:border-emerald-500" data-student-id="${s.id}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(s.fullName)}&background=059669&color=fff" alt="">
+                                <div>
+                                    <p class="font-medium text-gray-800">${s.fullName}</p>
+                                    <p class="text-xs text-gray-500">${s.enrolledCourseCount || 0} courses enrolled</p>
+                                </div>
+                            </div>
+                            <button onclick="showFeedbackModal('${s.id}', null)" class="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors">
+                                Quick Feedback
+                            </button>
+                        </div>
+                    </div>
+                `).join('') : 
+                `<div class="text-center text-gray-500 p-8">
+                    <i data-lucide="users" class="h-12 w-12 text-gray-300 mx-auto mb-4"></i>
+                    <p class="font-medium">No students yet</p>
+                    <p class="text-sm">Students will appear here when they select you as their mentor</p>
+                </div>`;
+            
+            updateFeedbackCourses(null);
+            loadFeedbackChat(null, null);
+            lucide.createIcons();
+        }
+        
+        function updateFeedbackCourses(studentId) {
+            document.querySelectorAll('.student-list-item').forEach(item => item.classList.remove('active'));
+            if (studentId) {
+                const studentItem = document.querySelector(`.student-list-item[data-student-id="${studentId}"]`);
+                if (studentItem) studentItem.classList.add('active');
+            }
+            
+            const courseList = document.getElementById('feedback-course-list');
+            
+            if (!studentId) {
+                courseList.innerHTML = `<p class="text-center text-gray-500 p-4">Select a student first</p>`;
+                return;
+            }
+            
+            const student = myStudents.find(s => s.id === studentId);
+            if (!student) {
+                courseList.innerHTML = `<p class="text-center text-gray-500 p-4">Student not found</p>`;
+                return;
+            }
+            
+            // Get courses the student is enrolled in (has courseData for)
+            const studentCourseData = student.courseData || {};
+            const enrolledCourses = [];
+            
+            Object.keys(studentCourseData).forEach(courseId => {
+                const course = courses.find(c => c.id === courseId);
+                if (course) {
+                    enrolledCourses.push({
+                        ...course,
+                        progress: studentCourseData[courseId].progress || 0
+                    });
+                }
+            });
+            
+            courseList.innerHTML = enrolledCourses.length > 0 ? 
+                enrolledCourses.map(course => `
+                    <div class="course-list-item p-3 rounded-lg cursor-pointer hover:bg-emerald-50 transition-colors" data-course-id="${course.id}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">
+                                    ${course.title.substring(0,2)}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-800">${course.title}</p>
+                                    <p class="text-xs text-gray-500">${course.progress.toFixed(0)}% complete</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : 
+                `<p class="text-center text-gray-500 p-4">Student is not enrolled in any courses yet.</p>`;
+        }
+
+        async function loadFeedbackChat(studentId, courseId) {
+            currentFeedback = { studentId, courseId };
+            document.querySelectorAll('.course-list-item').forEach(item => item.classList.remove('active'));
+            
+            if (courseId) {
+                const courseItem = document.querySelector(`.course-list-item[data-course-id="${courseId}"]`);
+                if(courseItem) courseItem.classList.add('active');
+            }
+
+            const chatContainer = document.getElementById('feedback-chat-container');
+            if (unsubscribeFeedback) unsubscribeFeedback();
+
+            if (!studentId || !courseId) {
+                chatContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                        <i data-lucide="inbox" class="h-16 w-16 mb-4 text-gray-300"></i>
+                        <h3 class="text-xl font-semibold mb-2">Select a Conversation</h3>
+                        <p>Select a student and a course to view the feedback thread.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+            
+            const student = myStudents.find(s => s.id === studentId);
+            const course = courses.find(c => c.id === courseId);
+            
+            chatContainer.innerHTML = `
+                <div class="border-b p-4 bg-gray-50">
+                    <div class="flex items-center space-x-3">
+                        <img class="h-10 w-10 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(student.fullName)}&background=059669&color=fff" alt="">
+                        <div>
+                            <h3 class="font-semibold">${student.fullName}</h3>
+                            <p class="text-sm text-gray-600">${course.title}</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="feedback-chat-area" class="flex-1 p-4 space-y-4 overflow-y-auto bg-gray-50">
+                    <p class="text-center text-gray-400">Loading messages...</p>
+                </div>
+                <div class="p-4 border-t bg-white">
+                    <form id="feedback-center-form" class="relative">
+                        <input id="feedback-input" type="text" placeholder="Type your feedback message..." class="w-full pr-24 pl-4 py-3 rounded-full bg-gray-100 border-transparent focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-600 text-white rounded-full h-9 w-20 font-semibold text-sm hover:bg-emerald-700 transition">Send</button>
+                    </form>
+                </div>`;
+            
+            // Load messages from Firebase using v8 compat syntax
+            try {
+                // Simplified query to avoid index requirements
+                const feedbackRef = db.collection('feedback')
+                    .where('studentId', '==', studentId)
+                    .where('mentorId', '==', auth.currentUser.uid);
+                
+                unsubscribeFeedback = feedbackRef.onSnapshot((snapshot) => {
+                    console.log('Firebase snapshot received:', snapshot.size, 'documents');
+                    const chatArea = document.getElementById('feedback-chat-area');
+                    if(!chatArea) return;
+                    
+                    const allMessages = [];
+                    snapshot.docs.forEach(doc => {
+                        const msg = doc.data();
+                        console.log('Processing message:', msg);
+                        // Filter by courseId in memory if specified
+                        if (!courseId || msg.courseId === courseId) {
+                            allMessages.push({ id: doc.id, ...msg });
+                        }
+                    });
+                    
+                    console.log('Filtered messages:', allMessages.length);
+                    
+                    // Sort messages by timestamp in memory
+                    allMessages.sort((a, b) => {
+                        if (!a.timestamp || !b.timestamp) return 0;
+                        return a.timestamp.seconds - b.timestamp.seconds;
+                    });
+                    
+                    const messages = allMessages.map(msg => {
+                        // Check if message is from mentor (current user) or from student
+                        const isFromMentor = msg.senderRole === 'mentor' || (msg.mentorId === auth.currentUser.uid && !msg.senderRole);
+                        const isFromStudent = msg.senderRole === 'student' || msg.sender !== auth.currentUser.uid;
+                        const timestamp = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleString() : '';
+                        
+                        // Debug logging
+                        console.log('Message analysis:', {
+                            messageId: msg.id,
+                            senderRole: msg.senderRole,
+                            mentorId: msg.mentorId,
+                            currentUserId: auth.currentUser.uid,
+                            sender: msg.sender,
+                            isFromMentor,
+                            isFromStudent
+                        });
+                        
+                        // Determine sender name
+                        const senderName = isFromMentor ? 'You' : (msg.senderName || 'Student');
+                        
+                        return `
+                            <div class="flex ${isFromMentor ? 'justify-end' : 'justify-start'} mb-4">
+                                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isFromMentor ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}">
+                                    <div class="text-xs font-medium mb-1 ${isFromMentor ? 'text-emerald-100' : 'text-blue-100'}">${senderName}</div>
+                                    <div class="text-sm">${msg.message}</div>
+                                    <div class="text-xs ${isFromMentor ? 'text-emerald-100' : 'text-blue-100'} mt-1">${timestamp}</div>
+                                    ${msg.type && msg.type !== 'general' ? `<div class="text-xs ${isFromMentor ? 'text-emerald-200' : 'text-blue-200'} mt-1 capitalize">${msg.type}</div>` : ''}
+                                    ${msg.improvements ? `<div class="text-xs mt-2 ${isFromMentor ? 'text-emerald-200' : 'text-blue-200'}"><strong>Improvements:</strong> ${msg.improvements}</div>` : ''}
+                                    ${msg.nextSteps ? `<div class="text-xs mt-1 ${isFromMentor ? 'text-emerald-200' : 'text-blue-200'}"><strong>Next Steps:</strong> ${msg.nextSteps}</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    if (messages.length > 0) {
+                        chatArea.innerHTML = messages.join('');
+                    } else {
+                        chatArea.innerHTML = `
+                            <div class="flex flex-col items-center justify-center h-full text-center text-gray-400">
+                                <i data-lucide="message-circle" class="h-12 w-12 mb-2"></i>
+                                <p>No feedback messages yet</p>
+                                <p class="text-xs mt-1">Send a message to start the conversation!</p>
+                                <div class="mt-4 p-3 bg-blue-50 rounded-lg text-blue-700 text-xs">
+                                    <p><strong>Debug Info:</strong></p>
+                                    <p>Student: ${studentId}</p>
+                                    <p>Course: ${courseId || 'General'}</p>
+                                    <p>Total docs: ${snapshot.size}</p>
+                                    <p>Filtered: ${allMessages.length}</p>
+                                </div>
+                            </div>`;
+                    }
+                    
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                    lucide.createIcons();
+                }, (error) => {
+                    console.error('Firebase listener error:', error);
+                    const chatArea = document.getElementById('feedback-chat-area');
+                    if (chatArea) {
+                        chatArea.innerHTML = `
+                            <div class="flex flex-col items-center justify-center h-full text-center text-red-400">
+                                <i data-lucide="alert-circle" class="h-12 w-12 mb-2"></i>
+                                <p>Error loading messages</p>
+                                <p class="text-xs mt-1">${error.message}</p>
+                            </div>`;
+                        lucide.createIcons();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error loading feedback:', error);
+                const chatArea = document.getElementById('feedback-chat-area');
+                if (chatArea) {
+                    chatArea.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-center text-red-400">
+                            <i data-lucide="alert-circle" class="h-12 w-12 mb-2"></i>
+                            <p>Error loading feedback messages</p>
+                        </div>`;
+                    lucide.createIcons();
+                }
+            }
+        }
+        
+
+        
+        async function sendFeedback(studentId, courseId, feedbackData) {
+            console.log('sendFeedback called with:', { studentId, courseId, feedbackData });
+            if (!feedbackData.message || !studentId) {
+                showFeedbackNotification('Please fill in the feedback message', 'error');
+                return;
+            }
+            
+            try {
+                // Create comprehensive feedback object
+                const feedbackDoc = {
+                    studentId: studentId,
+                    courseId: courseId || null,
+                    mentorId: auth.currentUser.uid,
+                    mentorName: mentorData.fullName,
+                    type: feedbackData.type || 'general',
+                    message: feedbackData.message,
+                    improvements: feedbackData.improvements || '',
+                    nextSteps: feedbackData.nextSteps || '',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    read: false
+                };
+                
+                // Save to Firestore
+                await db.collection('feedback').add(feedbackDoc);
+                
+                // Also try to send to backend if available
+                try {
+                    const headers = await getAuthHeader();
+                    await fetch(`${API_BASE_URL}/mentor/feedback/${studentId}/${courseId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...headers
+                        },
+                        body: JSON.stringify(feedbackDoc)
+                    });
+                } catch (backendError) {
+                    console.warn('Backend not available, feedback saved to Firebase only');
+                }
+                
+                // Show success message
+                showFeedbackNotification('Feedback sent successfully!', 'success');
+                setTimeout(() => {
+                    closeFeedbackModal();
+                }, 1500);
+                
+                console.log('Feedback sent successfully');
+                
+            } catch (error) { 
+                console.error("Error sending feedback: ", error);
+                showFeedbackNotification('Error sending feedback. Please try again.', 'error');
+            }
+        }
+        
+        function renderSettingsPage() {
+            const container = document.getElementById('settings-page');
+            container.innerHTML = `
+                <header class="mb-10">
+                    <h1 class="text-4xl font-extrabold text-gray-800">Account Settings</h1>
+                    <p class="text-gray-500 mt-2">Manage your profile and account information.</p>
+                </header>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="card p-8">
+                            <h3 class="text-xl font-bold mb-6">Profile Information</h3>
+                            <form id="update-profile-form" class="space-y-4">
+                                <div>
+                                    <label for="settings-fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                                    <input type="text" name="fullName" id="settings-fullName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3 border" required>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-700 transition-colors">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="card p-8">
+                            <h3 class="text-xl font-bold mb-6">Security</h3>
+                            <div class="flex items-center justify-between">
+                                <div><p class="font-medium">Password</p><p class="text-sm text-gray-500">For security, we will send a reset link to your email.</p></div>
+                                <button id="reset-password-button" class="bg-gray-200 text-gray-700 font-bold px-6 py-3 rounded-xl hover:bg-gray-300 transition-colors">Send Reset Link</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-8">
+                        <div class="card p-8">
+                            <h3 class="text-xl font-bold mb-6">Account Details</h3>
+                            <div class="space-y-4">
+                                <div><p class="text-sm font-medium text-gray-500">Email Address</p><p id="settings-email" class="font-semibold text-gray-800"></p></div>
+                                <div><p class="text-sm font-medium text-gray-500">Role</p><p class="font-semibold text-gray-800 capitalize">Mentor</p></div>
+                                 <div><p class="text-sm font-medium text-gray-500">Institution</p><p id="settings-institution" class="font-semibold text-gray-800"></p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('settings-fullName').value = mentorData.fullName || auth.currentUser.displayName;
+            document.getElementById('settings-email').textContent = auth.currentUser.email;
+            document.getElementById('settings-institution').textContent = mentorData.institutionName || 'N/A';
+        }
+        
+        async function showPerformanceModal(studentId, courseId) {
+            // Get fresh data from Firebase
+            const studentDoc = await db.collection("users").doc(studentId).get();
+            const courseDoc = await db.collection("courses").doc(courseId).get();
+            
+            if (!studentDoc.exists || !courseDoc.exists) {
+                showFeedbackNotification('Student or course data not found', 'error');
+                return;
+            }
+            
+            const student = { id: studentDoc.id, ...studentDoc.data() };
+            const course = { id: courseDoc.id, ...courseDoc.data() };
+            const courseData = student.courseData?.[courseId] || {};
+            
+            const progress = courseData.progress || 0;
+            const score = courseData.score || 0;
+            const completedModules = courseData.completedModules || [];
+            const totalModules = course.modules ? course.modules.length : 0;
+            const startDate = courseData.startDate ? new Date(courseData.startDate.seconds * 1000) : null;
+            const lastActivity = courseData.lastActivity ? new Date(courseData.lastActivity.seconds * 1000) : null;
+            const completionDate = courseData.completionDate ? new Date(courseData.completionDate.seconds * 1000) : null;
+            
+            // Calculate time metrics
+            let timeSpent = 'Not started';
+            let avgTimePerModule = 'N/A';
+            if (startDate && lastActivity) {
+                const daysDiff = Math.ceil((lastActivity - startDate) / (1000 * 60 * 60 * 24));
+                timeSpent = `${daysDiff} days`;
+                if (completedModules.length > 0) {
+                    avgTimePerModule = `${Math.ceil(daysDiff / completedModules.length)} days/module`;
+                }
+            }
+            
+            const modal = document.getElementById('student-performance-modal');
+            modal.innerHTML = `
+                <div class="modal-content bg-white rounded-xl shadow-2xl p-8 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800">${student.fullName}</h2>
+                            <p class="text-gray-500">${student.email}</p>
+                            <p class="text-emerald-600 font-semibold text-lg mt-1">${course.title}</p>
+                        </div>
+                        <button class="modal-close-btn text-gray-400 hover:text-gray-600"><i data-lucide="x" class="h-8 w-8"></i></button>
+                    </div>
+                    
+                    <!-- Key Metrics -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                        <div class="text-center p-6 bg-blue-50 rounded-xl">
+                            <div class="text-3xl font-bold text-blue-600">${progress.toFixed(0)}%</div>
+                            <div class="text-sm text-blue-600 mt-1">Course Progress</div>
+                        </div>
+                        <div class="text-center p-6 bg-emerald-50 rounded-xl">
+                            <div class="text-3xl font-bold text-emerald-600">${score}%</div>
+                            <div class="text-sm text-emerald-600 mt-1">Assessment Score</div>
+                        </div>
+                        <div class="text-center p-6 bg-purple-50 rounded-xl">
+                            <div class="text-3xl font-bold text-purple-600">${completedModules.length}/${totalModules}</div>
+                            <div class="text-sm text-purple-600 mt-1">Modules Completed</div>
+                        </div>
+                        <div class="text-center p-6 bg-yellow-50 rounded-xl">
+                            <div class="text-3xl font-bold text-yellow-600">${timeSpent}</div>
+                            <div class="text-sm text-yellow-600 mt-1">Time Spent</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Left Column: Module Details -->
+                        <div class="space-y-6">
+                            <div class="card p-6">
+                                <h3 class="text-xl font-bold mb-4">Module Progress</h3>
+                                <div class="space-y-3 max-h-80 overflow-y-auto">
+                                    ${course.modules ? course.modules.map((module, index) => {
+                                        const isCompleted = completedModules.includes(module.id);
+                                        return `
+                                            <div class="flex items-center justify-between p-3 rounded-lg ${isCompleted ? 'bg-green-50' : 'bg-gray-50'}">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}">
+                                                        ${isCompleted ? '<i data-lucide="check" class="h-4 w-4"></i>' : index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-medium ${isCompleted ? 'text-green-800' : 'text-gray-700'}">${module.title}</p>
+                                                        <p class="text-xs ${isCompleted ? 'text-green-600' : 'text-gray-500'}">${isCompleted ? 'Completed' : 'Not Started'}</p>
+                                                    </div>
+                                                </div>
+                                                ${isCompleted ? '<i data-lucide="check-circle" class="h-5 w-5 text-green-500"></i>' : '<i data-lucide="circle" class="h-5 w-5 text-gray-300"></i>'}
+                                            </div>
+                                        `;
+                                    }).join('') : '<p class="text-gray-500">No modules available</p>'}
+                                </div>
+                            </div>
+                            
+                            <!-- Timeline -->
+                            <div class="card p-6">
+                                <h3 class="text-xl font-bold mb-4">Learning Timeline</h3>
+                                <div class="space-y-4">
+                                    ${startDate ? `
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            <div>
+                                                <p class="font-medium">Course Started</p>
+                                                <p class="text-sm text-gray-500">${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString()}</p>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${lastActivity ? `
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                            <div>
+                                                <p class="font-medium">Last Activity</p>
+                                                <p class="text-sm text-gray-500">${lastActivity.toLocaleDateString()} at ${lastActivity.toLocaleTimeString()}</p>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${completionDate ? `
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                            <div>
+                                                <p class="font-medium">Course Completed</p>
+                                                <p class="text-sm text-gray-500">${completionDate.toLocaleDateString()} at ${completionDate.toLocaleTimeString()}</p>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    <div class="text-sm text-gray-500 mt-4 p-3 bg-gray-50 rounded">
+                                        <p><strong>Average time per module:</strong> ${avgTimePerModule}</p>
+                                        <p><strong>Completion rate:</strong> ${((completedModules.length / totalModules) * 100).toFixed(0)}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Charts and Analytics -->
+                        <div class="space-y-6">
+                            <div class="card p-6">
+                                <h3 class="text-xl font-bold mb-4">Progress Chart</h3>
+                                <canvas id="progress-chart" width="400" height="200"></canvas>
+                            </div>
+                            
+                            <div class="card p-6">
+                                <h3 class="text-xl font-bold mb-4">Performance Summary</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Overall Progress</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">${progress.toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Assessment Score</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-emerald-600 h-2 rounded-full" style="width: ${score}%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">${score}%</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Module Completion</span>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-purple-600 h-2 rounded-full" style="width: ${(completedModules.length / totalModules) * 100}%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium">${completedModules.length}/${totalModules}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t">
+                        <button onclick="closePerformanceModal()" class="px-6 py-2 text-gray-600 hover:text-gray-800">Close</button>
+                        <button onclick="showFeedbackModal('${studentId}', '${courseId}')" class="px-6 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+                            Send Feedback
+                        </button>
+                    </div>
+                </div>`;
+            
+            lucide.createIcons();
+            
+            // Create progress chart
+            setTimeout(() => {
+                const ctx = document.getElementById('progress-chart');
+                if (ctx) {
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Completed', 'Remaining'],
+                            datasets: [{
+                                data: [progress, 100 - progress],
+                                backgroundColor: ['#10B981', '#E5E7EB'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 100);
+            
+            modal.classList.add('active');
+        }
+
+        function closePerformanceModal() {
+            document.getElementById('student-performance-modal').classList.remove('active');
+        }
+
+        async function showFeedbackModal(studentId, courseId) {
+            console.log('showFeedbackModal called with:', { studentId, courseId });
+            try {
+                // Get fresh student data
+                const studentDoc = await db.collection("users").doc(studentId).get();
+                
+                if (!studentDoc.exists) {
+                    showErrorInModal('Student data not found. Please try again.');
+                    return;
+                }
+                
+                const student = { id: studentDoc.id, ...studentDoc.data() };
+                let course = null;
+                let courseData = {};
+                
+                // Get course data only if courseId is provided
+                if (courseId) {
+                    const courseDoc = await db.collection("courses").doc(courseId).get();
+                    if (!courseDoc.exists) {
+                        showErrorInModal('Course data not found. Please try again.');
+                        return;
+                    }
+                    course = { id: courseDoc.id, ...courseDoc.data() };
+                    courseData = student.courseData?.[courseId] || {};
+                }
+            
+                // Get previous feedback for this student-course combination
+                let previousFeedback = [];
+                try {
+                    // Simplified query to avoid index requirements
+                    const feedbackSnapshot = await db.collection("feedback")
+                        .where("studentId", "==", studentId)
+                        .where("mentorId", "==", auth.currentUser.uid)
+                        .limit(10)
+                        .get();
+                    
+                    // Filter and sort in memory to avoid complex index requirements
+                    const allFeedback = [];
+                    feedbackSnapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        // If courseId is specified, only include matching feedback
+                        if (!courseId || data.courseId === courseId) {
+                            allFeedback.push({ id: doc.id, ...data });
+                        }
+                    });
+                    
+                    // Sort by timestamp (newest first) and take only 5
+                    previousFeedback = allFeedback
+                        .sort((a, b) => {
+                            if (!a.timestamp || !b.timestamp) return 0;
+                            return b.timestamp.seconds - a.timestamp.seconds;
+                        })
+                        .slice(0, 5);
+                        
+                } catch (feedbackError) {
+                    console.warn('Could not load previous feedback:', feedbackError);
+                    // Continue without previous feedback
+                }
+                
+                const modal = document.getElementById('feedback-modal');
+                modal.innerHTML = `
+                    <div class="modal-content bg-white rounded-xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Send Feedback</h2>
+                                <p class="text-gray-600">For: <strong>${student.fullName}</strong>${course ? ` • Course: <strong>${course.title}</strong>` : ' • General Feedback'}</p>
+                            </div>
+                            <button class="modal-close-btn text-gray-400 hover:text-gray-600"><i data-lucide="x" class="h-6 w-6"></i></button>
+                        </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Left: Feedback Form -->
+                        <div class="space-y-6">
+                            ${course ? `
+                                <div class="card p-6">
+                                    <h3 class="text-lg font-semibold mb-4">Student Progress Summary</h3>
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="text-center p-3 bg-blue-50 rounded">
+                                            <div class="text-xl font-bold text-blue-600">${(courseData.progress || 0).toFixed(0)}%</div>
+                                            <div class="text-xs text-blue-600">Progress</div>
+                                        </div>
+                                        <div class="text-center p-3 bg-emerald-50 rounded">
+                                            <div class="text-xl font-bold text-emerald-600">${courseData.score || 0}%</div>
+                                            <div class="text-xs text-emerald-600">Assessment</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p>Modules completed: ${(courseData.completedModules || []).length}/${course.modules ? course.modules.length : 0}</p>
+                                        <p>Last activity: ${courseData.lastActivity ? new Date(courseData.lastActivity.seconds * 1000).toLocaleDateString() : 'Never'}</p>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="card p-6">
+                                    <h3 class="text-lg font-semibold mb-4">Student Overview</h3>
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div class="text-center p-3 bg-blue-50 rounded">
+                                            <div class="text-xl font-bold text-blue-600">${student.enrolledCourseCount || 0}</div>
+                                            <div class="text-xs text-blue-600">Enrolled Courses</div>
+                                        </div>
+                                        <div class="text-center p-3 bg-emerald-50 rounded">
+                                            <div class="text-xl font-bold text-emerald-600">${(student.averageProgress || 0).toFixed(0)}%</div>
+                                            <div class="text-xs text-emerald-600">Avg Progress</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p>Email: ${student.email}</p>
+                                        <p>Institution: ${student.institutionName || 'Not specified'}</p>
+                                    </div>
+                                </div>
+                            `}
+                            
+                            <form id="feedback-modal-form" data-student-id="${studentId}" data-course-id="${courseId || ''}" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Feedback Type</label>
+                                    <select id="feedback-type" class="w-full border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                        <option value="improvement">Improvement Suggestions</option>
+                                        <option value="encouragement">Encouragement</option>
+                                        <option value="milestone">Milestone Achievement</option>
+                                        <option value="concern">Areas of Concern</option>
+                                        <option value="general">General Feedback</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Feedback Message</label>
+                                    <textarea id="feedback-textarea" rows="6" class="w-full border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Share your observations about the student's progress, areas for improvement, achievements, or any other constructive feedback..."></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Specific Improvements Noted</label>
+                                    <textarea id="improvements-noted" rows="3" class="w-full border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Highlight specific improvements you've observed in the student's performance, understanding, or engagement..."></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Recommended Next Steps</label>
+                                    <textarea id="next-steps" rows="3" class="w-full border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Suggest specific actions or focus areas for the student's continued learning..."></textarea>
+                                </div>
+                                
+                                <div class="flex justify-end space-x-3 pt-4">
+                                    <button type="button" onclick="closeFeedbackModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                                    <button type="submit" id="feedback-submit-btn" class="bg-emerald-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
+                                        <i data-lucide="send" class="h-4 w-4 mr-2 inline"></i>
+                                        Send Feedback
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Right: Previous Feedback History -->
+                        <div class="space-y-6">
+                            <div class="card p-6">
+                                <h3 class="text-lg font-semibold mb-4">Previous Feedback History</h3>
+                                <div class="space-y-4 max-h-96 overflow-y-auto">
+                                    ${previousFeedback.length > 0 ? previousFeedback.map(feedback => {
+                                        const timestamp = feedback.timestamp ? 
+                                            (feedback.timestamp.seconds ? 
+                                                new Date(feedback.timestamp.seconds * 1000).toLocaleDateString() : 
+                                                new Date(feedback.timestamp).toLocaleDateString()) : 
+                                            'Recently';
+                                        return `
+                                            <div class="p-4 bg-gray-50 rounded-lg">
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <span class="text-xs font-medium px-2 py-1 rounded ${
+                                                        feedback.type === 'improvement' ? 'bg-blue-100 text-blue-800' :
+                                                        feedback.type === 'encouragement' ? 'bg-green-100 text-green-800' :
+                                                        feedback.type === 'milestone' ? 'bg-purple-100 text-purple-800' :
+                                                        feedback.type === 'concern' ? 'bg-red-100 text-red-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }">${feedback.type || 'general'}</span>
+                                                    <span class="text-xs text-gray-500">${timestamp}</span>
+                                                </div>
+                                                <p class="text-sm text-gray-700 mb-2">${feedback.message}</p>
+                                                ${feedback.improvements ? `<p class="text-xs text-emerald-600"><strong>Improvements:</strong> ${feedback.improvements}</p>` : ''}
+                                                ${feedback.nextSteps ? `<p class="text-xs text-blue-600"><strong>Next Steps:</strong> ${feedback.nextSteps}</p>` : ''}
+                                            </div>
+                                        `;
+                                    }).join('') : `<div class="text-center py-8">
+                                        <i data-lucide="message-circle" class="h-8 w-8 text-gray-300 mx-auto mb-2"></i>
+                                        <p class="text-gray-500">No previous feedback yet</p>
+                                        <p class="text-xs text-gray-400">Your feedback history will appear here</p>
+                                    </div>`}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            
+                lucide.createIcons();
+                modal.classList.add('active');
+                
+            } catch (error) {
+                console.error('Error showing feedback modal:', error);
+                showErrorInModal('Unable to load feedback form. Please try again.');
+            }
+        }
+
+        function showErrorInModal(message) {
+            const modal = document.getElementById('feedback-modal');
+            modal.innerHTML = `
+                <div class="modal-content bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                            <i data-lucide="alert-circle" class="h-6 w-6 text-red-600"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Unable to Load Feedback</h3>
+                        <p class="text-sm text-gray-500 mb-6">${message}</p>
+                        <button onclick="closeFeedbackModal()" class="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+            modal.classList.add('active');
+        }
+
+        function showFeedbackNotification(message, type = 'info', duration = 4000) {
+            // Remove any existing notifications to prevent stacking
+            const existingNotifications = document.querySelectorAll('.toast-notification');
+            existingNotifications.forEach(notif => notif.remove());
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `toast-notification fixed top-4 right-4 z-50 max-w-sm transform transition-all duration-300 translate-x-full`;
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'info';
+            const textColor = type === 'warning' ? 'text-yellow-900' : 'text-white';
+            
+            notification.innerHTML = `
+                <div class="${bgColor} ${textColor} p-4 rounded-lg shadow-lg flex items-center space-x-3">
+                    <i data-lucide="${icon}" class="h-5 w-5 flex-shrink-0"></i>
+                    <span class="font-medium flex-1">${message}</span>
+                    <button onclick="this.closest('.toast-notification').remove()" class="ml-2 ${textColor} hover:opacity-75">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            lucide.createIcons();
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after specified duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, duration);
+        }
+
+        // General notification function that can be used anywhere
+        window.showNotification = function(message, type = 'info', duration = 4000) {
+            showFeedbackNotification(message, type, duration);
+        };
+
+        function closeFeedbackModal() {
+            document.getElementById('feedback-modal').classList.remove('active');
+        }
+
+        function updateChart(chartInstance, canvasId, type, labels, data, label) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            moduleScoresChart = new Chart(ctx, {
+                type, data: { labels, datasets: [{ label, data, backgroundColor: 'rgba(5, 150, 105, 0.6)', borderColor: 'rgba(5, 150, 105, 1)', borderWidth: 1, borderRadius: 4 }] },
+                options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+            });
+        }
+        
+        function renderEnrollmentPieChart(enrolled, notEnrolled) {
+            const ctx = document.getElementById('enrollmentPieChart').getContext('2d');
+            if (enrollmentPieChart) enrollmentPieChart.destroy();
+            enrollmentPieChart = new Chart(ctx, {
+                type: 'pie', data: { labels: ['Enrolled', 'Not Enrolled'], datasets: [{ data: [enrolled, notEnrolled], backgroundColor: ['#10B981', '#E5E7EB'], hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+        
+        function setupEventListeners() {
+            document.querySelectorAll('a[data-page]').forEach(link => { link.addEventListener('click', async (e) => { e.preventDefault(); await switchPage(link.dataset.page); }); });
+            document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+            
+            document.getElementById('page-wrapper').addEventListener('click', (e) => {
+                const courseCard = e.target.closest('#courses-list-container .card');
+                if(courseCard) { showCourseDetail(courseCard.dataset.courseId); return; }
+
+                const backButton = e.target.closest('#course-back-button button');
+                if (backButton) { switchPage('courses'); return; }
+
+                const analyticsBtn = e.target.closest('.view-analytics-btn');
+                if (analyticsBtn) { showPerformanceModal(analyticsBtn.dataset.studentId, analyticsBtn.dataset.courseId); return; }
+
+                const feedbackBtn = e.target.closest('.give-feedback-btn');
+                if (feedbackBtn) { showFeedbackModal(feedbackBtn.dataset.studentId, feedbackBtn.dataset.courseId); return; }
+
+                const studentItem = e.target.closest('.student-list-item');
+                if (studentItem) { updateFeedbackCourses(studentItem.dataset.studentId); loadFeedbackChat(studentItem.dataset.studentId, null); return; }
+                
+                const courseItem = e.target.closest('.course-list-item');
+                if (courseItem) { const studentId = document.querySelector('.student-list-item.active')?.dataset.studentId; loadFeedbackChat(studentId, courseItem.dataset.courseId); return; }
+
+                const resetPasswordBtn = e.target.closest('#reset-password-button');
+                if (resetPasswordBtn) {
+                     auth.sendPasswordResetEmail(auth.currentUser.email)
+                        .then(() => showFeedbackNotification('Password reset email sent!', 'success'))
+                        .catch((error) => showFeedbackNotification('Error sending reset email: ' + error.message, 'error'));
+                }
+            });
+
+            // Modal click handlers
+            document.addEventListener('click', (e) => {
+                // Close modals when clicking outside
+                if (e.target.classList.contains('modal-backdrop')) {
+                    e.target.classList.remove('active');
+                }
+                
+                // Close modal buttons
+                if (e.target.closest('.modal-close-btn')) {
+                    e.target.closest('.modal-backdrop').classList.remove('active');
+                }
+            });
+
+            document.addEventListener('submit', async (e) => {
+                 if (e.target.id === 'feedback-center-form') {
+                    e.preventDefault();
+                    const { studentId, courseId } = currentFeedback;
+                    const input = document.getElementById('feedback-input');
+                    sendFeedback(studentId, courseId, { message: input.value });
+                    input.value = '';
+                }
+                if (e.target.id === 'feedback-modal-form') {
+                    e.preventDefault();
+                    const form = e.target;
+                    const submitBtn = form.querySelector('#feedback-submit-btn');
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 mr-2 inline animate-spin"></i>Sending...';
+                    lucide.createIcons();
+                    
+                    const feedbackData = {
+                        type: form.querySelector('#feedback-type').value,
+                        message: form.querySelector('#feedback-textarea').value.trim(),
+                        improvements: form.querySelector('#improvements-noted').value.trim(),
+                        nextSteps: form.querySelector('#next-steps').value.trim()
+                    };
+                    
+                    // Send feedback and reset button state
+                    sendFeedback(form.dataset.studentId, form.dataset.courseId, feedbackData).finally(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i data-lucide="send" class="h-4 w-4 mr-2 inline"></i>Send Feedback';
+                        lucide.createIcons();
+                    });
+                }
+                if (e.target.id === 'update-profile-form') {
+                     e.preventDefault();
+                    const newName = document.getElementById('settings-fullName').value.trim();
+                    if (!newName) return;
+                    const button = e.target.querySelector('button');
+                    button.disabled = true; button.textContent = 'Saving...';
+                    try {
+                        await auth.currentUser.updateProfile({ displayName: newName });
+                        await db.collection("users").doc(mentorData.id).update({ fullName: newName });
+                        showFeedbackNotification('Profile updated successfully!', 'success');
+                    } catch (error) {
+                        console.error("Error updating profile: ", error);
+                        showFeedbackNotification('Failed to update profile', 'error');
+                    } finally {
+                        button.disabled = false; button.textContent = 'Save Changes';
+                    }
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if(e.target.closest('.modal-close-btn')) {
+                    closePerformanceModal();
+                    closeFeedbackModal();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

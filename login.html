@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Skillpulse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f9fafb; /* gray-50 */
+        }
+        .card-container {
+            background: white;
+            border: 1px solid #e5e7eb; /* gray-200 */
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .view-content, .form-content {
+            display: none;
+            animation: slideFadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .view-content.active, .form-content.active {
+            display: block;
+        }
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .tab-btn {
+            position: relative;
+            transition: all 0.3s ease;
+            color: #6b7280; /* gray-500 */
+        }
+        .tab-btn.tab-active {
+            color: #4338ca; /* indigo-700 */
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background-color: #4f46e5; /* indigo-600 */
+            transition: width 0.3s ease;
+        }
+        .tab-btn.tab-active::after {
+            width: 80%;
+        }
+        .form-input, .form-select {
+            background: #f3f4f6; /* gray-100 */
+            border: 1px solid #d1d5db; /* gray-300 */
+            color: #111827; /* gray-900 */
+            transition: all 0.3s ease;
+        }
+        .form-input:focus, .form-select:focus {
+            background: white;
+            border-color: #4f46e5; /* indigo-600 */
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .submit-btn {
+            transition: all 0.3s ease;
+            background-size: 200% auto;
+        }
+        .submit-btn:hover:not(:disabled) {
+            background-position: right center;
+            transform: scale(1.03);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .message.show {
+             display: block;
+        }
+        .message-error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .message-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .role-selector input:checked + label {
+            background-color: #e0e7ff;
+            border-color: #a5b4fc;
+            color: #3730a3;
+            font-weight: 500;
+        }
+        .modal {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 50;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #institution-field {
+            transition: all 0.4s ease-in-out;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+        #institution-field.visible {
+            max-height: 100px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+    <a href="home.html" class="absolute top-5 right-5 z-10 bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm transition-transform transform hover:scale-105 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        Home
+    </a>
+
+    <div class="min-h-screen flex items-center justify-center p-4">
+        
+        <main class="grid grid-cols-1 md:grid-cols-2 w-full max-w-6xl h-auto min-h-[700px] md:h-auto md:max-h-[90vh] card-container rounded-3xl overflow-hidden">
+            
+            <aside class="hidden md:flex flex-col justify-center items-center p-12 text-center bg-gray-100 border-r border-gray-200">
+                <div class="w-full max-w-md">
+                    <img src="skillpulse.png" alt="Skillpulse Logo" class="mx-auto mb-10 w-52 h-52 rounded-full object-cover shadow-lg">
+                    <h1 class="text-3xl font-bold text-gray-800">Welcome to Skillpulse</h1>
+                    <p class="text-gray-500 mt-4">The next generation of online learning. Let's get started on your journey to mastery.</p>
+                </div>
+            </aside>
+
+            <section class="w-full h-full flex flex-col justify-center p-8 sm:p-12 overflow-y-auto">
+                
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900">Skillpulse</h2>
+                </div>
+
+                <div id="login-view" class="view-content active">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-semibold text-gray-800">Welcome Back</h3>
+                        <p class="text-gray-500 mt-1">Sign in to continue your journey.</p>
+                    </div>
+                     <div id="login-message" class="message"></div>
+                    <div class="flex items-center justify-center space-x-8 mb-8 border-b border-gray-200 pb-2">
+                        <button class="tab-btn py-2.5 px-4 text-sm font-semibold tab-active" onclick="switchTab('student')">Student</button>
+                        <button class="tab-btn py-2.5 px-4 text-sm font-semibold" onclick="switchTab('mentor')">Mentor</button>
+                        <button class="tab-btn py-2.5 px-4 text-sm font-semibold" onclick="switchTab('public')">Public</button>
+                    </div>
+                    
+                    <div id="form-container">
+                        <div id="student-form" class="form-content active">
+                            <form id="student-login-form" class="space-y-6">
+                                <div class="relative"><input name="email" type="email" placeholder="Student Email" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div>
+                                <div class="relative"><input name="password" type="password" placeholder="Password" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div>
+                                <div class="text-right"><a href="#" onclick="event.preventDefault(); switchView('forgot-view')" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a></div>
+                                <button type="submit" class="w-full py-3 px-4 font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg submit-btn flex justify-center items-center"><span>Sign in as Student</span></button>
+                            </form>
+                        </div>
+                        <div id="mentor-form" class="form-content"><form id="mentor-login-form" class="space-y-6"><div class="relative"><input name="email" type="email" placeholder="Mentor Email" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div><div class="relative"><input name="password" type="password" placeholder="Password" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div><div class="text-right"><a href="#" onclick="event.preventDefault(); switchView('forgot-view')" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a></div><button type="submit" class="w-full py-3 px-4 font-semibold text-white bg-gradient-to-r from-green-500 to-teal-500 rounded-lg submit-btn flex justify-center items-center"><span>Sign in as Mentor</span></button></form></div>
+                        <div id="public-form" class="form-content"><form id="public-login-form" class="space-y-6"><div class="relative"><input name="email" type="email" placeholder="Email Address" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div><div class="relative"><input name="password" type="password" placeholder="Password" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div><div class="text-right"><a href="#" onclick="event.preventDefault(); switchView('forgot-view')" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a></div><button type="submit" class="w-full py-3 px-4 font-semibold text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg submit-btn flex justify-center items-center"><span>Sign In</span></button></form></div>
+                    </div>
+                    <div class="mt-8 text-center"><p class="text-sm text-gray-500">Don't have an account? <a href="#" onclick="event.preventDefault(); switchView('signup-view')" class="font-medium text-indigo-600 hover:text-indigo-500">Create one</a></p></div>
+                </div>
+
+                <div id="forgot-view" class="view-content">
+                     <div class="text-center mb-8">
+                        <h3 class="text-2xl font-semibold text-gray-800">Forgot Password?</h3>
+                        <p class="text-gray-500 mt-1">We'll send you a reset link.</p>
+                    </div>
+                    <div id="forgot-message" class="message"></div>
+                    <form id="forgot-password-form" class="space-y-6">
+                        <div class="relative"><input name="email" type="email" placeholder="Your Email Address" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div>
+                        <button type="submit" class="w-full py-3 px-4 font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg submit-btn flex justify-center items-center"><span>Send Reset Link</span></button>
+                    </form>
+                    <div class="mt-8 text-center"><p class="text-sm text-gray-500"><a href="#" onclick="event.preventDefault(); switchView('login-view')" class="font-medium text-indigo-600 hover:text-indigo-500">&larr; Back to Login</a></p></div>
+                </div>
+                
+                <div id="signup-view" class="view-content">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-semibold text-gray-800">Create Your Account</h3>
+                        <p class="text-gray-500 mt-1">Let's get you started!</p>
+                    </div>
+                     <div id="signup-message" class="message"></div>
+                    <form id="signup-form" class="space-y-6">
+                        <div class="relative"><input name="fullname" type="text" placeholder="Full Name" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div>
+                        <div class="relative"><input name="email" type="email" placeholder="Email Address" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div>
+                        <div class="relative"><input name="password" type="password" placeholder="Create Password" required class="w-full px-4 py-3 form-input rounded-lg focus:outline-none focus:ring-0"></div>
+                        
+                        <div>
+                            <p class="text-center text-sm text-gray-500 mb-3">I am a...</p>
+                            <div class="role-selector grid grid-cols-3 gap-3 text-center">
+                                <input type="radio" name="role" value="student" id="role-student" class="sr-only" checked>
+                                <label for="role-student" class="cursor-pointer py-2 px-2 rounded-lg border border-gray-300 text-gray-500 transition-all duration-300">Student</label>
+                                
+                                <input type="radio" name="role" value="mentor" id="role-mentor" class="sr-only">
+                                <label for="role-mentor" class="cursor-pointer py-2 px-2 rounded-lg border border-gray-300 text-gray-500 transition-all duration-300">Mentor</label>
+                                
+                                <input type="radio" name="role" value="public" id="role-public" class="sr-only">
+                                <label for="role-public" class="cursor-pointer py-2 px-2 rounded-lg border border-gray-300 text-gray-500 transition-all duration-300">Public</label>
+                            </div>
+                        </div>
+
+                        <div id="institution-field" class="relative">
+                            <!-- MODIFICATION: Changed input to select dropdown -->
+                            <select name="institution" class="w-full px-4 py-3 form-select rounded-lg focus:outline-none focus:ring-0 appearance-none">
+                                <option value="" disabled selected>Select your Institution</option>
+                                <option value="Easwari Engineering College">Easwari Engineering College</option>
+                                <option value="Madras Institute of Technology">Madras Institute of Technology</option>
+                                <option value="Saveetha Engineering College">Saveetha Engineering College</option>
+                                <option value="Sri Sai Ram Engineering College">Sri Sai Ram Engineering College</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 px-4 font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg submit-btn flex justify-center items-center"><span>Create Account</span></button>
+                    </form>
+                    <div class="mt-8 text-center"><p class="text-sm text-gray-500">Already have an account? <a href="#" onclick="event.preventDefault(); switchView('login-view')" class="font-medium text-indigo-600 hover:text-indigo-500">Sign in</a></p></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="logged-in-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full text-center transform transition-all duration-300 scale-95 opacity-0">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">You're Already Logged In</h3>
+            <p class="text-gray-600 mb-6">Welcome back, <span id="user-email-display" class="font-medium">user</span>! Do you want to go to your dashboard?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="logout-button" class="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Log Out</button>
+                <button id="proceed-button" class="px-6 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition">Go to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.form-content').forEach(f => f.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('tab-active'));
+            document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`)?.classList.add('tab-active');
+            document.getElementById(`${tab}-form`)?.classList.add('active');
+        }
+
+        window.switchView = function(view) {
+            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+            document.getElementById(view)?.classList.add('active');
+        }
+    </script>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import { 
+        getAuth, 
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        sendPasswordResetEmail,
+        onAuthStateChanged,
+        updateProfile,
+        signOut
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import { 
+        getFirestore, 
+        doc, 
+        setDoc,
+        serverTimestamp
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDofE9-vx5XzqPAT7qUdK_ub0L-283kN4M",
+        authDomain: "skillpulse-d121f.firebaseapp.com",
+        projectId: "skillpulse-d121f",
+        storageBucket: "skillpulse-d121f.firebasestorage.app",
+        messagingSenderId: "350596146985",
+        appId: "1:350596146985:web:8b32779f769623adb4b938",
+        measurementId: "G-P3P2Z931K4"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const loadingSpinner = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Processing...</span>`;
+
+      function toggleButtonLoading(form, isLoading) {
+          const button = form.querySelector('button[type="submit"]');
+          if (!button) return;
+          if (isLoading) {
+              button.disabled = true;
+              button.dataset.originalHtml = button.innerHTML;
+              button.innerHTML = loadingSpinner;
+          } else {
+              button.disabled = false;
+              if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
+          }
+      }
+      
+      function showMessage(elementId, message, isError = false) {
+          const el = document.getElementById(elementId);
+          el.textContent = message;
+          el.classList.remove('message-error', 'message-success');
+          el.classList.add('show', isError ? 'message-error' : 'message-success');
+      }
+      
+      function getFirebaseErrorMessage(errorCode) {
+        switch (errorCode) {
+            case 'auth/invalid-email': return 'Please enter a valid email address.';
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential': return 'Invalid email or password. Please try again.';
+            case 'auth/email-already-in-use': return 'An account with this email already exists.';
+            case 'auth/weak-password': return 'Password should be at least 6 characters long.';
+            default: return 'An unexpected error occurred. Please try again.';
+        }
+      }
+
+      function getAbsolutePath(relativeUrl) {
+            const currentUrl = window.location.href;
+            return currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1) + relativeUrl;
+      }
+
+      onAuthStateChanged(auth, user => {
+        if (user && window.location.pathname.endsWith('login.html')) {
+            const modal = document.getElementById('logged-in-modal');
+            const modalContent = modal.querySelector('div');
+            const userEmailDisplay = document.getElementById('user-email-display');
+            const proceedButton = document.getElementById('proceed-button');
+            const logoutButton = document.getElementById('logout-button');
+
+            if (modal && userEmailDisplay && proceedButton && logoutButton) {
+                userEmailDisplay.textContent = user.email || 'friend';
+                modal.classList.add('show');
+                setTimeout(() => modalContent.classList.remove('scale-95', 'opacity-0'), 50);
+
+                proceedButton.onclick = () => {
+                    window.location.href = getAbsolutePath('dashboard.html');
+                };
+
+                logoutButton.onclick = () => signOut(auth).then(() => {
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => modal.classList.remove('show'), 300);
+                });
+            }
+        }
+      });
+      
+      const signupForm = document.getElementById('signup-form');
+      if (signupForm) {
+        const roleRadios = signupForm.querySelectorAll('input[name="role"]');
+        const institutionField = document.getElementById('institution-field');
+        // MODIFICATION: Changed to query for select instead of input
+        const institutionInput = institutionField.querySelector('select');
+
+        function toggleInstitutionField() {
+            const selectedRole = signupForm.querySelector('input[name="role"]:checked').value;
+            if (selectedRole === 'student' || selectedRole === 'mentor') {
+                institutionField.classList.add('visible');
+                institutionInput.required = true;
+            } else {
+                institutionField.classList.remove('visible');
+                institutionInput.required = false;
+            }
+        }
+        
+        roleRadios.forEach(radio => radio.addEventListener('change', toggleInstitutionField));
+        toggleInstitutionField();
+
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            toggleButtonLoading(signupForm, true);
+            const fullName = signupForm.fullname.value;
+            const email = signupForm.email.value;
+            const password = signupForm.password.value;
+            const role = signupForm.role.value;
+            const institution = institutionInput.value;
+            let createdUser;
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    createdUser = userCredential.user;
+                    
+                    const userData = {
+                        uid: createdUser.uid,
+                        fullName: fullName,
+                        email: email,
+                        role: role,
+                        level: 1,
+                        createdAt: serverTimestamp(),
+                        lastAccessedCourse: null // NEW: Add this field for the continue learning feature
+                    };
+
+                    if (role === 'student' || role === 'mentor') {
+                        userData.institutionName = institution;
+                    }
+
+                    if (role === 'student') {
+                        userData.stats = { coursesEnrolled: 0, assignmentsSubmitted: 0, overallGrade: 'N/A' };
+                        userData.courseData = {};
+                    }
+                    
+                    return setDoc(doc(db, "users", createdUser.uid), userData);
+                })
+                .then(() => updateProfile(createdUser, { displayName: fullName }))
+                .then(() => { window.location.href = getAbsolutePath('dashboard.html'); })
+                .catch((error) => { showMessage('signup-message', getFirebaseErrorMessage(error.code), true); })
+                .finally(() => { toggleButtonLoading(signupForm, false); });
+        });
+      }
+
+      function handleLogin(formId) {
+          const form = document.getElementById(formId);
+          if (!form) return;
+          form.addEventListener('submit', (e) => {
+              e.preventDefault();
+              toggleButtonLoading(form, true);
+              signInWithEmailAndPassword(auth, form.email.value, form.password.value)
+                .then(() => {
+                    window.location.href = getAbsolutePath('dashboard.html');
+                })
+                .catch((error) => {
+                    showMessage('login-message', getFirebaseErrorMessage(error.code), true);
+                })
+                .finally(() => {
+                    toggleButtonLoading(form, false);
+                });
+          });
+      }
+      ['student-login-form', 'mentor-login-form', 'public-login-form'].forEach(handleLogin);
+
+      const forgotPasswordForm = document.getElementById('forgot-password-form');
+      if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            toggleButtonLoading(forgotPasswordForm, true);
+            sendPasswordResetEmail(auth, forgotPasswordForm.email.value)
+                .then(() => { showMessage('forgot-message', 'Password reset email sent! Check your inbox and spam folder.'); })
+                .catch((error) => { showMessage('forgot-message', getFirebaseErrorMessage(error.code), true); })
+                .finally(() => { toggleButtonLoading(forgotPasswordForm, false); });
+        });
+      }
+    </script>
+</body>
+</html>
+

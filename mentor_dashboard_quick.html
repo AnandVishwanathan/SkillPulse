@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentor Dashboard - SkillPulse (Quick Access)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-gray-100 font-inter">
+    <div id="loader" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-600"></div>
+        <p class="mt-4 text-gray-600">Loading mentor dashboard...</p>
+        <button onclick="skipLoading()" class="mt-4 px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+            Skip & Continue
+        </button>
+    </div>
+
+    <div id="app" class="hidden min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-800 text-white">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold">SkillPulse</h1>
+                <p class="text-gray-300 text-sm">Mentor Dashboard</p>
+            </div>
+            <nav class="mt-8">
+                <a href="#" onclick="showPage('dashboard')"
+                    class="nav-link active block px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <i data-lucide="layout-dashboard" class="inline w-5 h-5 mr-3"></i>Dashboard
+                </a>
+                <a href="#" onclick="showPage('students')"
+                    class="nav-link block px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <i data-lucide="users" class="inline w-5 h-5 mr-3"></i>My Students
+                </a>
+                <a href="#" onclick="showPage('courses')"
+                    class="nav-link block px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <i data-lucide="book-copy" class="inline w-5 h-5 mr-3"></i>Courses
+                </a>
+            </nav>
+            <div class="absolute bottom-0 w-64 p-6 border-t border-gray-700">
+                <div class="flex items-center">
+                    <div
+                        class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
+                        M</div>
+                    <div class="ml-3">
+                        <p class="font-semibold" id="mentor-name">Loading...</p>
+                        <p class="text-sm text-gray-400">Mentor</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
+                    <i data-lucide="log-out" class="inline w-4 h-4 mr-2"></i>Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page p-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-emerald-100 rounded-full">
+                                <i data-lucide="users" class="w-6 h-6 text-emerald-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-500">My Students</p>
+                                <p class="text-2xl font-bold" id="student-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-blue-100 rounded-full">
+                                <i data-lucide="book-copy" class="w-6 h-6 text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-500">Courses</p>
+                                <p class="text-2xl font-bold" id="course-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-yellow-100 rounded-full">
+                                <i data-lucide="activity" class="w-6 h-6 text-yellow-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm text-gray-500">Status</p>
+                                <p class="text-sm font-bold" id="connection-status">Ready</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+                    <div class="space-y-2">
+                        <button onclick="loadStudentsFromFirebase()"
+                            class="w-full text-left px-4 py-2 bg-emerald-50 hover:bg-emerald-100 rounded">
+                            🔄 Load Students from Firebase
+                        </button>
+                        <button onclick="loadStudentsFromBackend()"
+                            class="w-full text-left px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded">
+                            🌐 Load Students from Backend API
+                        </button>
+                        <button onclick="window.open('test_mentor_selection.html', '_blank')"
+                            class="w-full text-left px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded">
+                            🧪 Test Mentor Selection
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Page -->
+            <div id="students-page" class="page hidden p-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-8">My Students</h1>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div id="students-list" class="p-6">
+                        <p class="text-gray-500">Click "Load Students" to fetch your students.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Page -->
+            <div id="courses-page" class="page hidden p-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-8">Courses</h1>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div id="courses-list" class="p-6">
+                        <p class="text-gray-500">Courses will be loaded automatically.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDofE9-vx5XzqPAT7qUdK_ub0L-283kN4M",
+            authDomain: "skillpulse-d121f.firebaseapp.com",
+            projectId: "skillpulse-d121f",
+            storageBucket: "skillpulse-d121f.appspot.com",
+            messagingSenderId: "350596146985",
+            appId: "1:350596146985:web:8b32779f769623adb4b938"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let mentorData = null;
+        let myStudents = [];
+        let courses = [];
+
+        // Navigation
+        window.showPage = function (pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageId + '-page').classList.remove('hidden');
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'bg-gray-700', 'text-white'));
+            event.target.classList.add('active', 'bg-gray-700', 'text-white');
+        };
+
+        window.logout = function () {
+            signOut(auth).then(() => {
+                window.location.href = 'login.html';
+            });
+        };
+
+        window.skipLoading = function () {
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        // Authentication check
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    currentUser = user;
+
+                    // Check user role
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (!userDoc.exists()) {
+                        throw new Error("User profile not found");
+                    }
+
+                    mentorData = userDoc.data();
+                    if (mentorData.role !== 'mentor') {
+                        throw new Error("Access denied. This dashboard is for mentors only.");
+                    }
+
+                    // Update UI
+                    document.getElementById('mentor-name').textContent = mentorData.fullName || user.email;
+
+                    // Auto-skip loading after 3 seconds
+                    setTimeout(() => {
+                        if (!document.getElementById('app').classList.contains('hidden')) return;
+                        skipLoading();
+                    }, 3000);
+
+                } catch (error) {
+                    console.error('Auth error:', error);
+                    alert('Error: ' + error.message);
+                    signOut(auth);
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        window.loadStudentsFromFirebase = async function () {
+            const statusEl = document.getElementById('connection-status');
+            const studentsListEl = document.getElementById('students-list');
+
+            try {
+                statusEl.textContent = 'Loading from Firebase...';
+                studentsListEl.innerHTML = '<p class="text-gray-500">Loading students from Firebase...</p>';
+
+                const studentsQuery = query(
+                    collection(db, "users"),
+                    where("mentorId", "==", currentUser.uid),
+                    where("role", "==", "student")
+                );
+
+                const studentsSnapshot = await getDocs(studentsQuery);
+                myStudents = [];
+
+                studentsSnapshot.forEach(doc => {
+                    const studentData = doc.data();
+                    myStudents.push({
+                        id: doc.id,
+                        fullName: studentData.fullName,
+                        email: studentData.email,
+                        institutionName: studentData.institutionName,
+                        enrolledCourseCount: Object.keys(studentData.courseData || {}).length,
+                        averageProgress: 0
+                    });
+                });
+
+                document.getElementById('student-count').textContent = myStudents.length;
+                statusEl.textContent = `✅ Firebase (${myStudents.length} students)`;
+
+                if (myStudents.length === 0) {
+                    studentsListEl.innerHTML = '<p class="text-gray-500">No students have selected you as mentor yet.</p>';
+                } else {
+                    studentsListEl.innerHTML = myStudents.map(student => `
+                        <div class="border-b pb-4 mb-4 last:border-b-0">
+                            <h3 class="font-semibold">${student.fullName}</h3>
+                            <p class="text-gray-600">${student.email}</p>
+                            <p class="text-sm text-gray-500">Institution: ${student.institutionName}</p>
+                            <p class="text-sm text-gray-500">Courses: ${student.enrolledCourseCount}</p>
+                        </div>
+                    `).join('');
+                }
+
+            } catch (error) {
+                statusEl.textContent = '❌ Firebase Error';
+                studentsListEl.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+            }
+        };
+
+        window.loadStudentsFromBackend = async function () {
+            const statusEl = document.getElementById('connection-status');
+            const studentsListEl = document.getElementById('students-list');
+
+            try {
+                statusEl.textContent = 'Loading from Backend...';
+                studentsListEl.innerHTML = '<p class="text-gray-500">Loading students from backend API...</p>';
+
+                const token = await getIdToken(currentUser);
+                const response = await fetch('http://localhost:8080/api/mentor/students', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+
+                myStudents = await response.json();
+                document.getElementById('student-count').textContent = myStudents.length;
+                statusEl.textContent = `✅ Backend API (${myStudents.length} students)`;
+
+                if (myStudents.length === 0) {
+                    studentsListEl.innerHTML = '<p class="text-gray-500">No students found via backend API.</p>';
+                } else {
+                    studentsListEl.innerHTML = myStudents.map(student => `
+                        <div class="border-b pb-4 mb-4 last:border-b-0">
+                            <h3 class="font-semibold">${student.fullName}</h3>
+                            <p class="text-gray-600">${student.email}</p>
+                            <p class="text-sm text-gray-500">Institution: ${student.institutionName || 'N/A'}</p>
+                            <p class="text-sm text-gray-500">Courses: ${student.enrolledCourseCount || 0}</p>
+                            <p class="text-sm text-gray-500">Progress: ${(student.averageProgress || 0).toFixed(1)}%</p>
+                        </div>
+                    `).join('');
+                }
+
+            } catch (error) {
+                statusEl.textContent = '❌ Backend Error';
+                studentsListEl.innerHTML = `<p class="text-red-500">Backend Error: ${error.message}</p>`;
+            }
+        };
+    </script>
+</body>
+
+</html>

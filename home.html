@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skillpulse - Unlock Your Coding Potential</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+        }
+
+        /* Hero section animated background */
+        .hero-bg {
+            position: relative;
+            background-color: #111827; /* gray-900 */
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, rgba(118, 56, 252, 0.1), transparent, rgba(56, 189, 248, 0.1));
+            animation: moveGradient 15s linear infinite;
+        }
+
+        @keyframes moveGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .code-snippet {
+            position: absolute;
+            color: #4b5563; /* gray-600 */
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0.1;
+            animation: moveCode 20s linear infinite;
+        }
+
+        @keyframes moveCode {
+            from { transform: translateY(0); }
+            to { transform: translateY(-100%); }
+        }
+
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom gradient text */
+        .gradient-text {
+            background: linear-gradient(to right, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Sticky Header */
+        header {
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        header.scrolled {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        /* Header text color transitions */
+        #header .header-item {
+            color: white;
+            transition: color 0.3s ease;
+        }
+        #header .header-logo path {
+            fill: white;
+            transition: fill 0.3s ease;
+        }
+        #header.scrolled .header-item {
+            color: #475569; /* slate-600 */
+        }
+        #header.scrolled .header-item.brand-text {
+            color: #0f172a; /* slate-900 */
+        }
+        #header.scrolled .header-logo path {
+            fill: #8b5cf6; /* violet-500 */
+        }
+        #header.scrolled .header-item:hover {
+            color: #8b5cf6; /* violet-500 */
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header id="header" class="fixed top-0 left-0 right-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold tracking-tight">
+                <a href="#" class="flex items-center space-x-3">
+                    <!-- SVG Logo -->
+                    <img class="header-logo h-8 w-8" src="Gemini_Generated_Image_b5y39db5y39db5y3 (1).ico"0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5-10-5-10 5z"/></img>
+                    <span class="header-item brand-text">Skillpulse</span>
+                </a>
+            </div>
+            <div id="desktop-menu" class="hidden lg:flex items-center space-x-8">
+                <a href="#courses" class="header-item transition-colors">Courses</a>
+                <a href="#roles" class="header-item transition-colors">For Universities</a>
+                <a href="#features" class="header-item transition-colors">Features</a>
+            </div>
+            <div class="hidden lg:block">
+                <a href="login.html" class="bg-violet-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-violet-700 transition-transform transform hover:scale-105 shadow-lg">
+                    Login / Sign Up
+                </a>
+            </div>
+            <button id="mobile-menu-button" class="lg:hidden">
+                 <i data-lucide="menu" class="header-item h-6 w-6"></i>
+            </button>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden absolute top-full left-0 w-full bg-white shadow-lg">
+            <div class="flex flex-col space-y-4 p-6">
+                <a href="#courses" class="text-slate-600 hover:text-violet-600 transition-colors">Courses</a>
+                <a href="#roles" class="text-slate-600 hover:text-violet-600 transition-colors">For Universities</a>
+                <a href="#features" class="text-slate-600 hover:text-violet-600 transition-colors">Features</a>
+                <a href="login.html" class="w-full text-center mt-4 bg-violet-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-violet-700 transition-transform transform hover:scale-105 shadow-lg">
+                    Login / Sign Up
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-bg text-white pt-32 pb-20">
+            <div class="container mx-auto px-6 text-center relative z-10">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter leading-tight mb-6">
+                    The Future of <span class="gradient-text">Code</span> is Collaborative.
+                </h1>
+                <p class="max-w-3xl mx-auto text-lg md:text-xl text-slate-300 mb-10">
+                    Skillpulse is your launchpad. Learn cutting-edge coding skills with guidance from university mentors or share your expertise with a global community.
+                </p>
+                <div class="flex justify-center items-center space-x-4">
+                    <a href="#courses" class="bg-violet-600 text-white font-semibold px-8 py-4 rounded-xl hover:bg-violet-700 transition-transform transform hover:scale-105 shadow-2xl">
+                        Explore Courses
+                    </a>
+                    <a href="#roles" class="bg-white text-slate-800 font-semibold px-8 py-4 rounded-xl hover:bg-slate-200 transition-transform transform hover:scale-105 shadow-2xl">
+                        Learn More
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Who We Are For Section -->
+        <section id="roles" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold">A Platform for Everyone</h2>
+                    <p class="text-slate-500 mt-4 max-w-2xl mx-auto">Whether you're a student, a university mentor, or a passionate developer, Skillpulse has a place for you.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Student Card -->
+                    <div class="card-hover bg-slate-50 p-8 rounded-2xl border border-slate-200">
+                        <div class="bg-violet-100 text-violet-600 rounded-full h-16 w-16 flex items-center justify-center mb-6">
+                            <i data-lucide="graduation-cap" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3">University Student</h3>
+                        <p class="text-slate-600">Access exclusive courses, get personalized mentorship from your university's top talent, and build a portfolio that stands out.</p>
+                    </div>
+                    <!-- Mentor Card -->
+                    <div class="card-hover bg-slate-50 p-8 rounded-2xl border border-slate-200">
+                         <div class="bg-sky-100 text-sky-600 rounded-full h-16 w-16 flex items-center justify-center mb-6">
+                            <i data-lucide="user-check" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3">University Mentor</h3>
+                        <p class="text-slate-600">Share your knowledge, guide the next generation of developers at your institution, and enhance your academic and professional profile.</p>
+                    </div>
+                    <!-- Public User Card -->
+                    <div class="card-hover bg-slate-50 p-8 rounded-2xl border border-slate-200">
+                         <div class="bg-emerald-100 text-emerald-600 rounded-full h-16 w-16 flex items-center justify-center mb-6">
+                            <i data-lucide="globe" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3">Public Learner</h3>
+                        <p class="text-slate-600">Join a global community of coders. Learn in-demand skills, contribute to projects, and grow your network, no matter where you are.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Featured Courses Section -->
+        <section id="courses" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold">Start Your Journey</h2>
+                    <p class="text-slate-500 mt-4 max-w-2xl mx-auto">Dive into the most popular and career-defining programming languages today.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Course Item -->
+                    <div class="card-hover bg-white p-6 rounded-2xl border border-slate-200 text-center">
+                        <img src="https://placehold.co/100x100/A78BFA/FFFFFF?text=PY" alt="Python Logo" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                        <h4 class="text-xl font-bold mb-2">Python</h4>
+                        <p class="text-slate-500 text-sm">Versatile and powerful, perfect for web development, data science, and AI.</p>
+                    </div>
+                    <!-- Course Item -->
+                    <div class="card-hover bg-white p-6 rounded-2xl border border-slate-200 text-center">
+                         <img src="https://placehold.co/100x100/38BDF8/FFFFFF?text=JS" alt="JavaScript Logo" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                        <h4 class="text-xl font-bold mb-2">JavaScript</h4>
+                        <p class="text-slate-500 text-sm">The language of the web. Build dynamic, interactive user experiences.</p>
+                    </div>
+                    <!-- Course Item -->
+                    <div class="card-hover bg-white p-6 rounded-2xl border border-slate-200 text-center">
+                         <img src="https://placehold.co/100x100/34D399/FFFFFF?text=R" alt="React Logo" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                        <h4 class="text-xl font-bold mb-2">React & Next.js</h4>
+                        <p class="text-slate-500 text-sm">Create modern, fast, and scalable front-end applications with ease.</p>
+                    </div>
+                    <!-- Course Item -->
+                    <div class="card-hover bg-white p-6 rounded-2xl border border-slate-200 text-center">
+                         <img src="https://placehold.co/100x100/F472B6/FFFFFF?text=DB" alt="Database Logo" class="mx-auto mb-4 h-24 w-24 rounded-full">
+                        <h4 class="text-xl font-bold mb-2">SQL & Databases</h4>
+                        <p class="text-slate-500 text-sm">Master the art of data management, from basic queries to complex systems.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <h2 class="text-4xl font-bold mb-6">Why Skillpulse is Different</h2>
+                        <div class="space-y-8">
+                            <div class="flex items-start space-x-4">
+                                <div class="bg-violet-100 text-violet-600 rounded-lg p-3"><i data-lucide="puzzle" class="h-6 w-6"></i></div>
+                                <div>
+                                    <h4 class="font-semibold text-lg">Interactive Learning</h4>
+                                    <p class="text-slate-500">Don't just watch videos. Code along in our integrated development environment and get instant feedback.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-4">
+                                <div class="bg-sky-100 text-sky-600 rounded-lg p-3"><i data-lucide="link" class="h-6 w-6"></i></div>
+                                <div>
+                                    <h4 class="font-semibold text-lg">University Connect</h4>
+                                    <p class="text-slate-500">A unique model that bridges the gap between academic learning and real-world application through mentorship.</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start space-x-4">
+                                <div class="bg-emerald-100 text-emerald-600 rounded-lg p-3"><i data-lucide="users" class="h-6 w-6"></i></div>
+                                <div>
+                                    <h4 class="font-semibold text-lg">Community Driven</h4>
+                                    <p class="text-slate-500">Ask questions, share projects, and collaborate with a diverse community of learners and experts.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden lg:block">
+                        <img src="https://placehold.co/600x500/E5E7EB/1F2937?text=Collaborative+Coding" alt="Code Collaboration Illustration" class="rounded-2xl shadow-xl">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="py-20">
+             <div class="container mx-auto px-6 text-center">
+                 <div class="bg-violet-600 text-white p-12 rounded-3xl">
+                    <h2 class="text-4xl font-bold mb-4">Ready to Elevate Your Skills?</h2>
+                    <p class="max-w-2xl mx-auto text-violet-200 mb-8">Create an account in minutes and start your journey towards mastering code. Your future is waiting.</p>
+                     <a href="login.html" class="bg-white text-violet-600 font-bold px-8 py-4 rounded-xl hover:bg-slate-200 transition-transform transform hover:scale-105 shadow-2xl inline-block">
+                        Get Started for Free
+                    </a>
+                 </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-300">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-white text-lg font-semibold mb-4">Skillpulse</h4>
+                    <p class="text-sm">The collaborative platform for the next generation of coders and creators.</p>
+                </div>
+                <div>
+                     <h5 class="text-white font-semibold mb-4">Navigate</h5>
+                     <ul class="space-y-2 text-sm">
+                         <li><a href="#courses" class="hover:text-white">Courses</a></li>
+                         <li><a href="#roles" class="hover:text-white">For Universities</a></li>
+                         <li><a href="#features" class="hover:text-white">Features</a></li>
+                     </ul>
+                </div>
+                 <div>
+                     <h5 class="text-white font-semibold mb-4">Legal</h5>
+                     <ul class="space-y-2 text-sm">
+                         <li><a href="#" class="hover:text-white">Terms of Service</a></li>
+                         <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                     </ul>
+                </div>
+                 <div>
+                     <h5 class="text-white font-semibold mb-4">Connect</h5>
+                     <div class="flex space-x-4">
+                        <a href="#"><i data-lucide="twitter" class="h-5 w-5 hover:text-white"></i></a>
+                        <a href="#"><i data-lucide="linkedin" class="h-5 w-5 hover:text-white"></i></a>
+                        <a href="#"><i data-lucide="github" class="h-5 w-5 hover:text-white"></i></a>
+                     </div>
+                </div>
+            </div>
+            <div class="mt-12 border-t border-slate-700 pt-6 text-center text-sm">
+                <p>&copy; 2025 Skillpulse Inc. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // Sticky header logic
+        const header = document.getElementById('header');
+        window.onscroll = function() {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        };
+
+        // Code snippet animation for hero
+        const heroBg = document.querySelector('.hero-bg');
+        const snippets = [
+            'const newArray = array.map(item => item * 2);',
+            'function greet(name) { return `Hello, ${name}!`; }',
+            'import React from "react";',
+            'SELECT * FROM users WHERE id = ?;',
+            'git commit -m "Initial commit"'
+        ];
+
+        for (let i = 0; i < 15; i++) {
+            const snippet = document.createElement('div');
+            snippet.className = 'code-snippet';
+            snippet.innerText = snippets[Math.floor(Math.random() * snippets.length)];
+            snippet.style.top = `${Math.random() * 100}%`;
+            snippet.style.left = `${Math.random() * 90}%`;
+            snippet.style.animationDuration = `${Math.random() * 10 + 15}s`;
+            snippet.style.animationDelay = `${Math.random() * 5}s`;
+            heroBg.appendChild(snippet);
+        }
+    </script>
+</body>
+</html>
+
