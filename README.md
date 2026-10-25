@@ -79,6 +79,12 @@ A comprehensive mentoring platform with Java Spring Boot backend and HTML/JavaSc
 
 ## API Endpoints
 
+### System Endpoints
+
+- `GET /api/health` - Uptime and health status check
+  - Requires: No authentication (public)
+  - Returns: `{"status": "UP", "service": "SkillPulse Backend", "timestamp": ...}`
+
 ### Mentor Endpoints
 
 - `GET /api/mentor/students` - Get all students for a mentor
@@ -102,8 +108,11 @@ const firebaseConfig = {
 
 ### Backend Configuration
 
-The backend connects to Firebase using a service account key located at:
-`backend/backend/src/main/resources/firebase-service-account.json`
+The backend connects to Firebase using service account credentials discovered in the following order:
+1. Environment variable `FIREBASE_CONFIG_PATH` pointing to the JSON service account key.
+2. Standard Google Cloud environment variable `GOOGLE_APPLICATION_CREDENTIALS`.
+3. Render secret file path `/etc/secrets/firebase-service-account.json`.
+4. Local classpath resource `backend/backend/src/main/resources/firebase-service-account.json`.
 
 ## Troubleshooting
 
